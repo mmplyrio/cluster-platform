@@ -4,7 +4,7 @@ const members = [
     {
         name: 'Mateus',
         role: 'Fundador - CEO',
-        avatar: 'fundador.jpg',
+        avatar: 'fundador.JPG',
         link: 'https://www.linkedin.com/in/mmplyrio/',
     },
     {
