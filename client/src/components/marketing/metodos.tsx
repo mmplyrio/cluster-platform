@@ -10,20 +10,20 @@ export default function MethodologySection() {
 
     const images = {
         'item-1': {
-            image: '/charts.png',
+            image: '/dados.svg',
             alt: 'Database visualization',
         },
         'item-2': {
-            image: '/music.png',
-            alt: 'Security authentication',
+            image: '/validacao.svg',
+            alt: 'Briefing',
         },
         'item-3': {
-            image: '/mail2.png',
-            alt: 'Identity management',
+            image: '/const-prod.svg',
+            alt: 'market',
         },
         'item-4': {
-            image: '/payments.png',
-            alt: 'Analytics dashboard',
+            image: '/governanca.svg',
+            alt: 'governance',
         },
     }
 

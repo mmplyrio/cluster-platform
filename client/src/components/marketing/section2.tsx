@@ -8,7 +8,7 @@ export default function AboutUsSection() {
                     <h2 className="text-balance text-4xl font-medium lg:text-5xl">Somos uma <span className="text-[#f84f08] font-bold">Venture Builder</span> orientada por dados.</h2>
                     <p className="text-lg">Criamos negócios próprios e participamos ativamente da construção de soluções escaláveis.</p>
                 </div>
-                <img className="rounded-(--radius)" src="https://images.unsplash.com/photo-1616587226960-4a03badbe8bf?q=80&w=2940&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="team image" height="" width="" loading="lazy" />
+                <img className="rounded-(--radius) grayscale" src="briefing-precific.JPG" alt="team image" height="" width="" loading="lazy" />
 
                 <div className="relative mx-auto grid grid-cols-2 gap-x-3 gap-y-6 sm:gap-8 lg:grid-cols-4">
                     <div className="space-y-3">
