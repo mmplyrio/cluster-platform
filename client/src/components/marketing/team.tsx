@@ -4,13 +4,13 @@ const members = [
     {
         name: 'Mateus',
         role: 'Fundador - CEO',
-        avatar: 'https://alt.tailus.io/images/team/member-one.webp',
-        link: '#',
+        avatar: 'fundador.jpg',
+        link: 'https://www.linkedin.com/in/mmplyrio/',
     },
     {
         name: 'Daniel',
         role: 'Co-Fundador - COO',
-        avatar: 'https://alt.tailus.io/images/team/member-two.webp',
+        avatar: 'cofundador.png',
         link: '#',
     },
 ]
