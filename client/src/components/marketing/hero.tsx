@@ -12,16 +12,16 @@ export default function HeroSection() {
                     <div className="pb-24 pt-32 md:pb-32 lg:pb-56 lg:pt-44">
                         <div className="relative mx-auto flex max-w-6xl flex-col items-center px-6 lg:flex-row lg:justify-between lg:gap-12">
                             <div className="mx-auto max-w-lg text-center lg:ml-0 lg:w-1/2 lg:text-left">
-                                <h1 className="mt-8 max-w-2xl text-balance text-3xl font-medium md:text-4xl lg:mt-0 xl:text-5xl">Construímos negócios orientados por dados, não por achismos.</h1>
-                                <p className="mt-8 max-w-2xl text-pretty text-lg">A Cluster é uma Venture Builder que cria, valida e escala startups e produtos próprios a partir de finanças, estratégia e execução real.</p>
+                                <h1 className="mt-8 max-w-2xl text-balance text-3xl font-medium md:text-4xl lg:mt-0 xl:text-5xl">Desenvolvemos empresas e criamos ativos escaláveis.</h1>
+                                <p className="mt-8 max-w-2xl text-pretty text-lg">De um lado, estruturamos negócios por meio de uma metodologia focada no desenvolvimento empresarial. Do outro, transformamos problemas reais de mercado em ventures próprias com potencial de escala.</p>
 
                                 <div className="mt-12 flex flex-col items-center justify-center gap-2 sm:flex-row lg:justify-start">
                                     <Button
                                         asChild
                                         size="lg"
                                         className="px-5 text-base bg-[#f84f08] hover:bg-[#f84f08]/80">
-                                        <Link href="#ventures">
-                                            <span className="text-nowrap text-white">Conheça nossas ventures</span>
+                                        <Link href="#growth">
+                                            <span className="text-nowrap text-white">Conhecer Cluster Growth</span>
                                         </Link>
                                     </Button>
                                     <Button
@@ -30,8 +30,8 @@ export default function HeroSection() {
                                         size="lg"
                                         variant="ghost"
                                         className="px-5 text-base">
-                                        <Link href="#metodos">
-                                            <span className="text-nowrap">Entenda nosso modelo</span>
+                                        <Link href="#venture">
+                                            <span className="text-nowrap">Explorar Ventures</span>
                                         </Link>
                                     </Button>
                                 </div>
