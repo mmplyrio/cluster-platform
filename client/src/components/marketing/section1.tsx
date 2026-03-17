@@ -3,14 +3,15 @@ import Image from 'next/image'
 
 export default function TurnSection() {
     return (
-        <section id="cluster" className="py-8 md:py-16 scroll-mt-16">
+        <section id="growth" className="bg-gray-50 py-8 md:py-16 scroll-mt-16">
             <div className="mx-auto max-w-6xl px-6">
                 <div className="grid items-center gap-12 md:grid-cols-2 md:gap-12 lg:grid-cols-5 lg:gap-24">
                     <div className="lg:col-span-2">
                         <div className="md:pr-6 lg:pr-0">
-                            <h2 className="text-4xl font-semibold lg:text-5xl">Da consultoria tradicional à construção de negócios.</h2>
-                            <p className="mt-6">A Cluster nasceu como uma consultoria empresarial focada em finanças e estratégia.
-                                Com o tempo, percebemos que orientar não era suficiente. Negócios precisam de:</p>
+                            <h2 className="text-4xl font-semibold lg:text-5xl">Growth: desenvolvimento empresarial com método aplicado</h2>
+                            <p className="mt-6">Pensado para empresas que precisam crescer com mais critério, organização e capacidade de execução.
+                                Auxiliamos empresários a sair da gestão reativa e construir uma operação mais consciente, previsível e orientada por dados.
+                            </p>
                         </div>
                         <ul className="mt-8 divide-y border-y *:flex *:items-center *:gap-3 *:py-3">
                             <li>

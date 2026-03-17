@@ -2,10 +2,10 @@ import { Cpu, Lock, Sparkles, Zap, DollarSign, HandCoins, Brain, } from 'lucide-
 
 export default function AboutUsSection() {
     return (
-        <section id="sobre-nos" className="py-8 md:py-16 scroll-mt-16">
+        <section id="venture" className="py-8 md:py-16 scroll-mt-16">
             <div className="mx-auto max-w-5xl space-y-8 px-6 md:space-y-12">
                 <div className="mx-auto max-w-xl space-y-2 text-center md:space-y-6">
-                    <h2 className="text-balance text-4xl font-medium lg:text-5xl">Somos uma <span className="text-[#f84f08] font-bold">Venture Builder</span> orientada por dados.</h2>
+                    <h2 className="text-balance text-4xl font-medium lg:text-5xl"><span className="text-[#f84f08] font-bold">Venture Builder</span>.</h2>
                     <p className="text-lg">Criamos negócios próprios e participamos ativamente da construção de soluções escaláveis.</p>
                 </div>
                 <img className="rounded-(--radius) grayscale" src="briefing-precific.JPG" alt="team image" height="" width="" loading="lazy" />
