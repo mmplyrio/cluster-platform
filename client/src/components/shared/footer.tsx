@@ -2,12 +2,12 @@ import { Logo } from '@/components/logo'
 import Link from 'next/link'
 
 const links = [
-    { name: 'A Cluster', href: '#link' },
-    { name: 'Ventures', href: '#link' },
-    { name: 'Método', href: '#link' },
-    { name: 'Consultoria', href: '#link' },
-    { name: 'Fundadores', href: '#link' },
-    { name: 'Contato', href: '#link' },
+    { name: 'Growth', href: '#growth' },
+    { name: 'Método', href: '#metodos' },
+    { name: 'Soluções', href: '#consultoria' },
+    { name: 'Ventures', href: '#venture' },
+    { name: 'Fundadores', href: '#fundadores' },
+    { name: 'Contato', href: '#cta' },
 ]
 
 export default function FooterSection() {

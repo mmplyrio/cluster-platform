@@ -6,10 +6,10 @@ import { Button } from '@/components/ui/button'
 import React from 'react'
 
 const menuItems = [
-    { name: 'A Cluster', href: '#cluster' },
-    { name: 'Ventures', href: '#ventures' },
+    { name: 'Growth', href: '#growth' },
     { name: 'Método', href: '#metodos' },
-    { name: 'Consultoria', href: '#consultoria' },
+    { name: 'Soluções', href: '#consultoria' },
+    { name: 'Ventures', href: '#venture' },
     { name: 'Fundadores', href: '#fundadores' },
     { name: 'Contato', href: '#cta' },
 ]
