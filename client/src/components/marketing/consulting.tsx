@@ -8,7 +8,7 @@ export default function ConsultingSection() {
         <section id="consultoria" className="bg-gray-50 py-16 md:py-32 dark:bg-transparent scroll-mt-16">
             <div className="mx-auto max-w-5xl px-6">
                 <div className="relative z-10 max-w-2xl">
-                    <h2 className="text-4xl font-semibold lg:text-5xl">O sucesso de uma empresa depende de um único fator:</h2>
+                    <h2 className="text-4xl font-semibold lg:text-5xl">O sucesso de uma empresa não depende de um único fator:</h2>
                     <p className="mt-6 text-lg">Por isso buscamos o desenvolvimento multidimensional, pois acreditamos que uma empresa só cresce quando todos os seus pilares se consolidam de forma integrada.</p>
                 </div>
                 <div className="relative mt-12">
