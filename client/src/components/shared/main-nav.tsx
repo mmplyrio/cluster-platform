@@ -82,7 +82,7 @@ export const HeroHeader = () => {
                                     asChild
                                     size="sm"
                                     className="bg-zinc-300 hover:bg-zinc-200 text-white hover:text-white">
-                                    <Link href="#">
+                                    <Link href="/login">
                                         <span>Acessar</span>
                                     </Link>
                                 </Button>
