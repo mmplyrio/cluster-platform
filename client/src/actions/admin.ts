@@ -1,6 +1,6 @@
 'use server';
 
-const API_URL = 'http://localhost:4000/api';
+const API_URL = `${process.env.NEXT_PUBLIC_API_URL}/api`;
 
 export async function getDashboardKPIs() {
     try {
