@@ -10,7 +10,7 @@ import CTASection from "@/components/marketing/cta";
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Cluster | Inovação e Tecnologia',
+  title: 'Cluster | Inovação & Tecnologia',
   description: 'Cluster | Inovação e Tecnologia',
   icons: {
     icon: '/logomarca.svg', // Opcional se você já colocou na raiz
