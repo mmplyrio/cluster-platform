@@ -37,7 +37,9 @@ export async function loginAction(prevState: any, formData: FormData) {
         maxAge: 60 * 60 * 24, // 24 hours
     });
 
-    const redirectPath = result.data.user.role === 'master' ? '/admin/leads' : '/dashboard';
+    const redirectPath = (result.data.user.role === 'master' || result.data.user.role === 'admin') 
+        ? '/admin/leads' 
+        : '/dashboard';
     redirect(redirectPath);
 }
 
