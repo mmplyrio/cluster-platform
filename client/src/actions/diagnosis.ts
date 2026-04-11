@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 
-const API_URL = `${process.env.NEXT_PUBLIC_API_URL}/api`;
+const API_URL = 'http://localhost:4000/api';
 
 export type SubmitDiagnosisInput = {
     lead: {
@@ -25,13 +25,13 @@ export async function submitDiagnosis(input: SubmitDiagnosisInput) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(input)
         });
-
+        
         const json = await res.json();
-
+        
         if (json.success) {
             revalidatePath('/admin/leads');
         }
-
+        
         return json;
     } catch (error) {
         console.error('Erro ao processar diagnóstico:', error);

@@ -3,7 +3,7 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
-const API_URL = `${process.env.NEXT_PUBLIC_API_URL}/api`;
+const API_URL = 'http://localhost:4000/api';
 
 export async function loginAction(prevState: any, formData: FormData) {
     const email = formData.get('email');
@@ -58,15 +58,15 @@ export async function checkEmailAction(email: string) {
             body: JSON.stringify({ email }),
         });
         const json = await res.json();
-
+        
         if (!json.success) {
             return { error: json.error || 'Erro ao validar email', exists: false, isFirstAccess: false };
         }
-
-        return {
-            error: null,
-            exists: json.data.exists,
-            isFirstAccess: json.data.isFirstAccess
+        
+        return { 
+            error: null, 
+            exists: json.data.exists, 
+            isFirstAccess: json.data.isFirstAccess 
         };
     } catch (e) {
         return { error: 'Falha de comunicação', exists: false, isFirstAccess: false };
