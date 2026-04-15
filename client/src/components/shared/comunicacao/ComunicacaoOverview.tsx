@@ -1,0 +1,173 @@
+"use client";
+
+import {
+    MessageSquare,
+    Megaphone,
+    Clock,
+    ArrowRight,
+    TrendingUp,
+    AlertTriangle,
+    Target
+} from "lucide-react";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+
+export type UserRole = "MENTOR" | "ALUNO" | "ADMIN";
+
+interface ComunicacaoOverviewProps {
+    userRole: UserRole;
+}
+
+export function ComunicacaoOverview({ userRole }: ComunicacaoOverviewProps) {
+    const isGestor = userRole === "MENTOR" || userRole === "ADMIN";
+
+    return (
+        <div className="p-8 space-y-8 overflow-y-auto h-full">
+            {/* Boas-vindas Personalizado */}
+            <div>
+                <h1 className="text-2xl font-bold text-slate-800">
+                    {isGestor ? "Painel de Controle de Comunicação" : "Central de Mensagens e Avisos"}
+                </h1>
+                <p className="text-slate-500">
+                    {isGestor
+                        ? "Acompanhe o engajamento e as pendências da sua base de alunos."
+                        : "Fique por dentro das atualizações e prazos da sua mentoria."}
+                </p>
+            </div>
+
+            {/* GRID DE INDICADORES (STATS) - Adaptado por Role */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <Card className="border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+                    <CardHeader className="flex flex-row items-center justify-between pb-2">
+                        <CardTitle className="text-sm font-medium text-slate-500">
+                            {isGestor ? "Novas Mensagens" : "Mensagens Não Lidas"}
+                        </CardTitle>
+                        <MessageSquare className="w-4 h-4 text-[#f84f08]" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold text-slate-800">12</div>
+                        <p className="text-xs text-slate-400 mt-1">
+                            {isGestor ? "4 conversas aguardando retorno" : "Aguardando sua leitura"}
+                        </p>
+                    </CardContent>
+                </Card>
+
+                <Card className="border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+                    <CardHeader className="flex flex-row items-center justify-between pb-2">
+                        <CardTitle className="text-sm font-medium text-slate-500">
+                            {isGestor ? "Leitura de Avisos" : "Avisos Importantes"}
+                        </CardTitle>
+                        <Megaphone className="w-4 h-4 text-blue-500" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold text-slate-800">
+                            {isGestor ? "82%" : "3 novos"}
+                        </div>
+                        <p className="text-xs text-slate-400 mt-1">
+                            {isGestor ? "Taxa média de abertura" : "Avisos publicados esta semana"}
+                        </p>
+                    </CardContent>
+                </Card>
+
+                <Card className="border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+                    <CardHeader className="flex flex-row items-center justify-between pb-2">
+                        <CardTitle className="text-sm font-medium text-slate-500">
+                            {isGestor ? "Prazos Críticos" : "Minhas Entregas"}
+                        </CardTitle>
+                        <Clock className="w-4 h-4 text-red-500" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold text-slate-800">5</div>
+                        <p className="text-xs text-slate-400 mt-1">
+                            {isGestor ? "Atrasos identificados na base" : "Vencimentos próximos"}
+                        </p>
+                    </CardContent>
+                </Card>
+            </div>
+
+            {/* SEÇÃO DE CONTEÚDO RECENTE */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+                {/* Lado Esquerdo: Últimas Mensagens (Comum a ambos) */}
+                <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                        <h3 className="font-bold text-slate-700 text-sm uppercase tracking-wider flex items-center gap-2">
+                            <MessageSquare className="w-4 h-4 text-slate-400" /> Conversas Recentes
+                        </h3>
+                        <Button variant="ghost" size="sm" className="text-[#f84f08] text-xs font-bold" asChild>
+                            <Link href="/mentor/comunicacao/inbox">Abrir Inbox <ArrowRight className="w-3 h-3 ml-1" /></Link>
+                        </Button>
+                    </div>
+                    <div className="bg-white border border-slate-200 rounded-xl divide-y divide-slate-100">
+                        <div className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors cursor-pointer">
+                            <div className="flex flex-col">
+                                <span className="text-sm font-bold text-slate-800">
+                                    {isGestor ? "João Paulo (Tech Solutions)" : "Seu Mentor (Equipe Cluster)"}
+                                </span>
+                                <span className="text-xs text-slate-500 truncate max-w-[200px]">Subi a planilha de custos...</span>
+                            </div>
+                            <span className="text-[10px] text-slate-400 font-medium">10 min</span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Lado Direito: Alertas do Radar - Adaptado por Role */}
+                <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                        <h3 className="font-bold text-slate-700 text-sm uppercase tracking-wider flex items-center gap-2">
+                            <Clock className="w-4 h-4 text-slate-400" /> Alertas do Radar
+                        </h3>
+                        <Button variant="ghost" size="sm" className="text-[#f84f08] text-xs font-bold" asChild>
+                            <Link href="/mentor/comunicacao/radar">Ver Radar <ArrowRight className="w-3 h-3 ml-1" /></Link>
+                        </Button>
+                    </div>
+                    <div className="bg-white border border-slate-200 rounded-xl p-4 space-y-4">
+                        {isGestor ? (
+                            /* Visão do Mentor: Foco em cobrar e gerir base */
+                            <div className="flex items-start gap-3 p-3 bg-red-50 border border-red-100 rounded-lg">
+                                <div className="mt-0.5"><AlertTriangle className="w-4 h-4 text-red-600" /></div>
+                                <div>
+                                    <p className="text-sm font-bold text-red-900">Atrasos na Tech Solutions</p>
+                                    <p className="text-xs text-red-700">A entrega de 'DRE Projetada' está vencida há 2 dias.</p>
+                                </div>
+                            </div>
+                        ) : (
+                            /* Visão do Aluno: Foco em fazer e não atrasar */
+                            <div className="flex items-start gap-3 p-3 bg-amber-50 border border-amber-100 rounded-lg">
+                                <div className="mt-0.5"><Target className="w-4 h-4 text-amber-600" /></div>
+                                <div>
+                                    <p className="text-sm font-bold text-amber-900">Entrega para Amanhã</p>
+                                    <p className="text-xs text-amber-700">Não esqueça de enviar seu Mapa de Custos Fixos.</p>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
+
+            {/* CTA DINÂMICO FINAL */}
+            <div className="bg-slate-900 rounded-2xl p-6 text-white flex flex-col md:flex-row items-center justify-between gap-6">
+                <div className="flex items-center gap-4">
+                    <div className="p-3 bg-white/10 rounded-full">
+                        <Megaphone className="w-6 h-6 text-[#f84f08]" />
+                    </div>
+                    <div>
+                        <h4 className="font-bold">{isGestor ? "Comunicar para a Base" : "Fique por dentro"}</h4>
+                        <p className="text-sm text-slate-400">
+                            {isGestor
+                                ? "Dispare avisos gerais ou por turma para manter todos alinhados."
+                                : "Confira todos os comunicados importantes no mural oficial."}
+                        </p>
+                    </div>
+                </div>
+                <Button className="bg-[#f84f08] hover:bg-[#d94205] text-white font-bold" asChild>
+                    <Link href="/mentor/comunicacao/broadcast">
+                        {isGestor ? "Criar Novo Aviso" : "Ver Mural de Avisos"}
+                    </Link>
+                </Button>
+            </div>
+        </div>
+    );
+}
