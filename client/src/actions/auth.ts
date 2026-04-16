@@ -30,6 +30,13 @@ export async function loginAction(prevState: any, formData: FormData) {
             body: JSON.stringify({ email, password }),
         });
 
+        if (!res.ok) {
+            const text = await res.text();
+            console.error(`[loginAction] HTTP ${res.status} de ${API_URL}/auth/login`);
+            console.error('[loginAction] Resposta recebida:', text.slice(0, 200));
+            return { error: `Erro do servidor (${res.status}). Tente novamente.` };
+        }
+
         result = await res.json();
     } catch (e) {
         console.error('[loginAction] Falha ao conectar com API:', e);
@@ -71,6 +78,14 @@ export async function checkEmailAction(email: string) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email }),
         });
+
+        if (!res.ok) {
+            const text = await res.text();
+            console.error(`[checkEmailAction] HTTP ${res.status} de ${API_URL}/auth/check-email`);
+            console.error('[checkEmailAction] Resposta recebida:', text.slice(0, 200));
+            return { error: `Erro do servidor (${res.status}). Tente novamente.`, exists: false, isFirstAccess: false };
+        }
+
         const json = await res.json();
         
         if (!json.success) {
