@@ -63,3 +63,38 @@ export async function convertLeadToAlunoAction(leadId: string, mentorId: string)
         return { success: false, error: 'Erro ao converter o lead.' };
     }
 }
+
+export async function getMentorsListAction() {
+    try {
+        const headers = await getAuthHeaders();
+        const res = await fetch(`${API_URL}/admin/mentors`, { headers, cache: 'no-store' });
+        return await res.json();
+    } catch (error) {
+        console.error('Erro ao buscar lista de mentores:', error);
+        return { success: false, data: [], error: 'Falha ao buscar mentores' };
+    }
+}
+
+export async function createTeamMemberAction(formData: FormData) {
+    try {
+        const email = formData.get('email');
+        const fullName = formData.get('fullName');
+        const roleName = formData.get('roleName');
+
+        if (!email || !fullName || !roleName) {
+            return { success: false, error: 'Preencha todos os campos corretamente.' };
+        }
+
+        const headers = await getAuthHeaders();
+        const res = await fetch(`${API_URL}/admin/team`, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({ email, fullName, roleName })
+        });
+        
+        const result = await res.json();
+        return result;
+    } catch (error) {
+        return { success: false, error: 'Erro de comunicação ao criar conta de equipe' };
+    }
+}

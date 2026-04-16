@@ -1,4 +1,4 @@
-import { getLeadDetails } from '@/actions/admin';
+import { getLeadDetails, getMentorsListAction } from '@/actions/admin';
 import { notFound } from 'next/navigation';
 import {
     User,
@@ -34,7 +34,12 @@ export default async function LeadDetailsPage({
     params: Promise<{ id: string }>;
 }) {
     const { id } = await params;
-    const result = await getLeadDetails(id);
+    const [result, mentorsResult] = await Promise.all([
+        getLeadDetails(id),
+        getMentorsListAction()
+    ]);
+
+    const mentors = mentorsResult.data || [];
 
     if (!result.success || !result.data) {
         notFound();
@@ -144,7 +149,7 @@ export default async function LeadDetailsPage({
                             </div>
                         )}
                         <div className="mt-2 pt-2 border-t border-slate-100 flex justify-end w-full">
-                            <ConvertLeadButton leadId={id} />
+                            <ConvertLeadButton leadId={id} mentors={mentors} />
                         </div>
                     </div>
                 </div>

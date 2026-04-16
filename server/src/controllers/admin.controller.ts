@@ -20,9 +20,18 @@ export class AdminController {
         }
     }
 
+    static async getMentors(req: Request, res: Response) {
+        try {
+            const data = await AdminService.getMentors();
+            res.json({ success: true, data, error: null });
+        } catch (error) {
+            res.status(500).json({ success: false, error: 'Falha ao carregar mentores' });
+        }
+    }
+
     static async getLeadDetails(req: Request, res: Response) {
         try {
-            const data = await AdminService.getLeadDetails(req.params.id);
+            const data = await AdminService.getLeadDetails(req.params.id as string);
             if (!data) {
                 res.status(404).json({ success: false, error: 'Lead not found' });
                 return;
@@ -56,7 +65,7 @@ export class AdminController {
     static async transformToAluno(req: Request, res: Response) {
         try {
             const { mentorId } = req.body;
-            const data = await AdminService.transformLeadToAluno(req.params.id, mentorId);
+            const data = await AdminService.transformLeadToAluno(req.params.id as string, mentorId);
             res.json({ success: true, data });
         } catch (error: any) {
             res.status(400).json({ success: false, error: error.message });
