@@ -3,9 +3,15 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
-// INTERNAL_API_URL deve ser configurada na Vercel com a URL completa do backend Render
-// Ex: https://seu-backend.onrender.com/api
-const API_URL = process.env.INTERNAL_API_URL || 'http://localhost:4000/api';
+// IMPORTANTE: process.env deve ser lido DENTRO das funções (runtime), não no nível do módulo.
+// Se lido no nível do módulo, o Next.js faz inlining em build time, antes das env vars da Vercel serem injetadas.
+function getApiUrl(): string {
+    const url = process.env.INTERNAL_API_URL;
+    if (!url) {
+        console.error('[auth] INTERNAL_API_URL não está configurada! Usando fallback localhost.');
+    }
+    return url || 'http://localhost:4000/api';
+}
 
 export async function loginAction(prevState: any, formData: FormData) {
     const email = formData.get('email');
@@ -15,6 +21,7 @@ export async function loginAction(prevState: any, formData: FormData) {
         return { error: 'Preencha todos os campos.' };
     }
 
+    const API_URL = getApiUrl();
     let result;
     try {
         const res = await fetch(`${API_URL}/auth/login`, {
@@ -57,6 +64,7 @@ export async function logoutAction() {
 export async function checkEmailAction(email: string) {
     if (!email) return { error: 'Email inválido', exists: false, isFirstAccess: false };
 
+    const API_URL = getApiUrl();
     try {
         const res = await fetch(`${API_URL}/auth/check-email`, {
             method: 'POST',
@@ -94,6 +102,7 @@ export async function setupPasswordAction(prevState: any, formData: FormData) {
         return { error: 'As senhas não coincidem.' };
     }
 
+    const API_URL = getApiUrl();
     let result;
     try {
         const res = await fetch(`${API_URL}/auth/set-password`, {

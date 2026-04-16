@@ -8,6 +8,7 @@ async function getDashboardData() {
     const token = (await cookies()).get('session')?.value;
     if (!token) redirect('/login');
 
+    // Leitura dentro da função = avaliada em runtime (não em build time)
     const apiUrl = process.env.INTERNAL_API_URL || 'http://localhost:4000/api';
     const res = await fetch(`${apiUrl}/mentor/dashboard`, {
         headers: {

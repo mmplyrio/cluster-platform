@@ -2,9 +2,13 @@
 
 import { revalidatePath } from 'next/cache';
 
-// INTERNAL_API_URL deve ser configurada na Vercel com a URL completa do backend Render
-// Ex: https://seu-backend.onrender.com/api
-const API_URL = process.env.INTERNAL_API_URL || 'http://localhost:4000/api';
+function getApiUrl(): string {
+    const url = process.env.INTERNAL_API_URL;
+    if (!url) {
+        console.error('[diagnosis] INTERNAL_API_URL não está configurada! Usando fallback localhost.');
+    }
+    return url || 'http://localhost:4000/api';
+}
 
 export type SubmitDiagnosisInput = {
     lead: {
@@ -21,6 +25,7 @@ export type SubmitDiagnosisInput = {
 };
 
 export async function submitDiagnosis(input: SubmitDiagnosisInput) {
+    const API_URL = getApiUrl();
     try {
         const res = await fetch(`${API_URL}/diagnosis`, {
             method: 'POST',

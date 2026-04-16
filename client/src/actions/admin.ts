@@ -2,9 +2,13 @@
 
 import { cookies } from 'next/headers';
 
-// INTERNAL_API_URL deve ser configurada na Vercel com a URL completa do backend Render
-// Ex: https://seu-backend.onrender.com/api
-const API_URL = process.env.INTERNAL_API_URL || 'http://localhost:4000/api';
+function getApiUrl(): string {
+    const url = process.env.INTERNAL_API_URL;
+    if (!url) {
+        console.error('[admin] INTERNAL_API_URL não está configurada! Usando fallback localhost.');
+    }
+    return url || 'http://localhost:4000/api';
+}
 
 async function getAuthHeaders() {
     const session = (await cookies()).get('session')?.value;
@@ -15,6 +19,7 @@ async function getAuthHeaders() {
 }
 
 export async function getDashboardKPIs() {
+    const API_URL = getApiUrl();
     try {
         const headers = await getAuthHeaders();
         const res = await fetch(`${API_URL}/admin/kpis`, { headers, cache: 'no-store' });
@@ -26,6 +31,7 @@ export async function getDashboardKPIs() {
 }
 
 export async function getLeadsList() {
+    const API_URL = getApiUrl();
     try {
         const headers = await getAuthHeaders();
         const res = await fetch(`${API_URL}/admin/leads`, { headers, cache: 'no-store' });
@@ -41,6 +47,7 @@ export async function getLeadDetails(leadId: string) {
         return { success: false, data: null, error: 'ID do lead é obrigatório' };
     }
 
+    const API_URL = getApiUrl();
     try {
         const headers = await getAuthHeaders();
         const res = await fetch(`${API_URL}/admin/leads/${leadId}`, { headers, cache: 'no-store' });
@@ -52,6 +59,7 @@ export async function getLeadDetails(leadId: string) {
 }
 
 export async function convertLeadToAlunoAction(leadId: string, mentorId: string) {
+    const API_URL = getApiUrl();
     try {
         const headers = await getAuthHeaders();
         const res = await fetch(`${API_URL}/admin/leads/${leadId}/convert`, {
@@ -67,6 +75,7 @@ export async function convertLeadToAlunoAction(leadId: string, mentorId: string)
 }
 
 export async function getMentorsListAction() {
+    const API_URL = getApiUrl();
     try {
         const headers = await getAuthHeaders();
         const res = await fetch(`${API_URL}/admin/mentors`, { headers, cache: 'no-store' });
@@ -78,6 +87,7 @@ export async function getMentorsListAction() {
 }
 
 export async function createTeamMemberAction(formData: FormData) {
+    const API_URL = getApiUrl();
     try {
         const email = formData.get('email');
         const fullName = formData.get('fullName');
