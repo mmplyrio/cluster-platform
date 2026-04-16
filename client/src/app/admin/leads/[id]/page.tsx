@@ -20,6 +20,10 @@ import { ConvertLeadButton } from '@/components/admin/ConvertLeadButton';
 
 import type { Metadata } from 'next'
 
+export const dynamic = 'force-dynamic';
+
+import { cookies } from "next/headers";
+
 export const metadata: Metadata = {
     title: 'Cluster | Inovação e Tecnologia',
     description: 'Cluster | Inovação e Tecnologia',
