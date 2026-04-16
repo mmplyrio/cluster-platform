@@ -1,11 +1,30 @@
 import { logoutAction } from '@/actions/auth';
 import { LogOut } from 'lucide-react';
+import { CreateTeamMemberSheet } from '@/components/admin/CreateTeamMemberSheet';
+import { cookies } from 'next/headers';
 
-export default function AdminLayout({
+export default async function AdminLayout({
     children,
 }: {
     children: React.ReactNode;
 }) {
+    let isAdmin = false;
+    try {
+        const session = (await cookies()).get('session')?.value;
+        if (session) {
+            const base64Url = session.split('.')[1];
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            const jsonPayload = decodeURIComponent(atob(base64).split('').map(function (c) {
+                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join(''));
+            const payload = JSON.parse(jsonPayload);
+            const r = (payload.role || '').toUpperCase();
+            if (r === 'ADMIN' || r === 'MASTER') isAdmin = true;
+        }
+    } catch (e) {
+        console.error('Falha ao decodificar token no layout', e);
+    }
+
     return (
         <div className="min-h-screen bg-slate-50">
             {/* Barra superior da área administrativa */}
@@ -18,6 +37,7 @@ export default function AdminLayout({
                     <span className="text-sm font-semibold text-slate-700">Painel Admin — Cluster</span>
                 </div>
                 <div className="ml-auto flex items-center gap-6">
+                    {isAdmin && <CreateTeamMemberSheet />}
                     <a
                         href="/admin/leads"
                         className="text-sm font-medium text-slate-500 hover:text-slate-800 transition-colors"

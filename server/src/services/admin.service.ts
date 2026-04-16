@@ -58,6 +58,16 @@ export class AdminService {
         };
     }
 
+    static async getMentors() {
+        const [mentorRole] = await db.select().from(roles).where(eq(roles.name, 'MENTOR'));
+        if (!mentorRole) return [];
+        return await db.select({
+            id: users.id,
+            fullName: users.fullName,
+            email: users.email
+        }).from(users).where(eq(users.roleId, mentorRole.id));
+    }
+
     static async getLeads() {
         return await db.select({
             id: leads.id,
@@ -137,9 +147,10 @@ export class AdminService {
         const [existing] = await db.select().from(users).where(eq(users.email, email));
         if (existing) throw new Error('email_in_use');
 
-        const hash = await bcrypt.hash('Senha123!', 10);
         const [newUser] = await db.insert(users).values({
-            email, fullName, passwordHash: hash, roleId: roleObj.id,
+            email, 
+            fullName, 
+            roleId: roleObj.id,
         }).returning();
 
         return newUser;
@@ -166,9 +177,8 @@ export class AdminService {
             const [newUser] = await db.insert(users).values({
                 email: leadDetails.email!,
                 fullName: leadDetails.nome!,
-                phone: leadDetails.telefone!, // using the remapped 'telefone', actually it is whatsapp in db
+                phone: leadDetails.whatsapp!, 
                 roleId: alunoRole.id,
-                passwordHash: null,
             }).returning();
             existingUser = newUser;
         }

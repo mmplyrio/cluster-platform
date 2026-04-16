@@ -11,6 +11,7 @@ router.use(authMiddleware);
 router.get('/kpis', requireRole(['ADMIN', 'COMERCIAL']), AdminController.getKPIs);
 router.get('/leads', requireRole(['ADMIN', 'COMERCIAL']), AdminController.getLeads);
 router.get('/leads/:id', requireRole(['ADMIN', 'COMERCIAL']), AdminController.getLeadDetails);
+router.get('/mentors', requireRole(['ADMIN', 'COMERCIAL']), AdminController.getMentors);
 router.post('/leads/:id/convert', requireRole(['ADMIN', 'COMERCIAL']), AdminController.transformToAluno);
 
 router.post('/team', requireRole(['ADMIN']), AdminController.createTeamMember);
