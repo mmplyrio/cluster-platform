@@ -3,7 +3,7 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
-const API_URL = 'http://localhost:4000/api';
+const API_URL = process.env.INTERNAL_API_URL || 'http://localhost:4000/api';
 
 export async function loginAction(prevState: any, formData: FormData) {
     const email = formData.get('email');
