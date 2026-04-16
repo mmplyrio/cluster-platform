@@ -8,7 +8,8 @@ async function getDashboardData() {
     const token = (await cookies()).get('session')?.value;
     if (!token) redirect('/login');
 
-    const res = await fetch('http://localhost:4000/api/mentor/dashboard', {
+    const apiUrl = process.env.INTERNAL_API_URL || 'http://localhost:4000/api';
+    const res = await fetch(`${apiUrl}/mentor/dashboard`, {
         headers: {
             'Authorization': `Bearer ${token}`
         },

@@ -2,7 +2,7 @@
 
 import { cookies } from 'next/headers';
 
-const API_URL = 'http://localhost:4000/api';
+const API_URL = process.env.INTERNAL_API_URL || 'http://localhost:4000/api';
 
 async function getAuthHeaders() {
     const session = (await cookies()).get('session')?.value;
