@@ -37,9 +37,11 @@ export async function loginAction(prevState: any, formData: FormData) {
         maxAge: 60 * 60 * 24, // 24 hours
     });
 
-    const redirectPath = (result.data.user.role === 'master' || result.data.user.role === 'admin') 
-        ? '/admin/leads' 
-        : '/dashboard';
+    let redirectPath = '/';
+    const r = (result.data.user.role || '').toUpperCase();
+    if (r === 'ADMIN' || r === 'COMERCIAL' || r === 'MASTER') redirectPath = '/admin/leads';
+    else if (r === 'MENTOR') redirectPath = '/mentor';
+    else if (r === 'ALUNO') redirectPath = '/mentee';
     redirect(redirectPath);
 }
 
@@ -109,6 +111,10 @@ export async function setupPasswordAction(prevState: any, formData: FormData) {
         maxAge: 60 * 60 * 24, // 24 hours
     });
 
-    const redirectPath = result.data.user.role === 'master' ? '/admin/leads' : '/dashboard';
+    let redirectPath = '/';
+    const r = (result.data.user.role || '').toUpperCase();
+    if (r === 'ADMIN' || r === 'COMERCIAL' || r === 'MASTER') redirectPath = '/admin/leads';
+    else if (r === 'MENTOR') redirectPath = '/mentor';
+    else if (r === 'ALUNO') redirectPath = '/mentee';
     redirect(redirectPath);
 }
