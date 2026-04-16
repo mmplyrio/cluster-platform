@@ -2,6 +2,8 @@
 
 import { cookies } from 'next/headers';
 
+// INTERNAL_API_URL deve ser configurada na Vercel com a URL completa do backend Render
+// Ex: https://seu-backend.onrender.com/api
 const API_URL = process.env.INTERNAL_API_URL || 'http://localhost:4000/api';
 
 async function getAuthHeaders() {

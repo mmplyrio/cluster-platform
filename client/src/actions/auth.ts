@@ -3,6 +3,8 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
+// INTERNAL_API_URL deve ser configurada na Vercel com a URL completa do backend Render
+// Ex: https://seu-backend.onrender.com/api
 const API_URL = process.env.INTERNAL_API_URL || 'http://localhost:4000/api';
 
 export async function loginAction(prevState: any, formData: FormData) {
@@ -23,6 +25,8 @@ export async function loginAction(prevState: any, formData: FormData) {
 
         result = await res.json();
     } catch (e) {
+        console.error('[loginAction] Falha ao conectar com API:', e);
+        console.error('[loginAction] API_URL usada:', API_URL);
         return { error: 'Erro de comunicação com o servidor. Tente novamente.' };
     }
 
@@ -71,6 +75,8 @@ export async function checkEmailAction(email: string) {
             isFirstAccess: json.data.isFirstAccess 
         };
     } catch (e) {
+        console.error('[checkEmailAction] Falha ao conectar com API:', e);
+        console.error('[checkEmailAction] API_URL usada:', API_URL);
         return { error: 'Falha de comunicação', exists: false, isFirstAccess: false };
     }
 }
@@ -97,6 +103,8 @@ export async function setupPasswordAction(prevState: any, formData: FormData) {
         });
         result = await res.json();
     } catch (e) {
+        console.error('[setupPasswordAction] Falha ao conectar com API:', e);
+        console.error('[setupPasswordAction] API_URL usada:', API_URL);
         return { error: 'Erro de comunicação com o servidor. Tente novamente.' };
     }
 
