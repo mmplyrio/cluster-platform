@@ -1,19 +1,33 @@
 import MentorDashboard from "@/components/mentor/cards";
 import { TableMentee, Mentee } from "@/components/mentor/TableMentee";
 import { AvisosList, Aviso } from "@/components/shared/AvisosList";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 
-const alunosMockados: Mentee[] = [
-    { id: "A01", nome: "Empresa XPTO Ltda", turma: "Abril 2026", status: "Ativo" },
-    { id: "A02", nome: "Comercial Silva", turma: "Abril 2026", status: "Pausado" },
-    { id: "A03", nome: "Tech Solutions", turma: "Janeiro 2026", status: "Concluído" },
-];
+async function getDashboardData() {
+    const token = (await cookies()).get('session')?.value;
+    if (!token) redirect('/login');
 
-const avisosDoMentor: Aviso[] = [
-    { id: "1", titulo: "Atualização no Módulo 3", conteudo: "Subi uma nova planilha de DRE para a turma de Abril.", data: "12 Abr 2026", tipo: "info" },
-    { id: "2", titulo: "Lembrete: Sessão Extra", conteudo: "Nossa revisão será amanhã às 14h.", data: "11 Abr 2026", tipo: "urgente" },
-];
+    const res = await fetch('http://localhost:4000/api/mentor/dashboard', {
+        headers: {
+            'Authorization': `Bearer ${token}`
+        },
+        cache: 'no-store'
+    });
 
-export default function MentorPage() {
+    if (!res.ok) {
+        return { alunos: [], avisos: [] };
+    }
+
+    const json = await res.json();
+    return json.data;
+}
+
+export default async function MentorPage() {
+    const data = await getDashboardData();
+    const alunos = data?.alunos || [];
+    const avisos = data?.avisos || [];
+
     return (
         <div className="space-y-6">
             <div>
@@ -22,8 +36,8 @@ export default function MentorPage() {
             </div>
             <MentorDashboard />
             <div className="grid grid-cols-2 gap-4">
-                <TableMentee data={alunosMockados} />
-                <AvisosList avisos={avisosDoMentor} />
+                <TableMentee data={alunos} />
+                <AvisosList avisos={avisos} />
             </div>
         </div>
     );

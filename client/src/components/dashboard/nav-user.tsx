@@ -31,6 +31,8 @@ import {
 
 import Link from 'next/link';
 
+import { logoutAction } from '@/actions/auth';
+
 export function NavUser({
     user,
 }: {
@@ -101,8 +103,14 @@ export function NavUser({
                         </DropdownMenuGroup>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem>
-                            <LogOut />
-                            Sair
+                            <form action={logoutAction}>
+                                <button type="submit">
+                                    <div className="flex items-center gap-2">
+                                        <LogOut />
+                                        Sair
+                                    </div>
+                                </button>
+                            </form>
                         </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>

@@ -12,9 +12,13 @@ export async function middleware(request: NextRequest) {
     const isAuthPage = request.nextUrl.pathname.startsWith('/login');
     const isAdminPage = request.nextUrl.pathname.startsWith('/admin');
     const isDashboardPage = request.nextUrl.pathname.startsWith('/dashboard');
+    const isMentorPage = request.nextUrl.pathname.startsWith('/mentor');
+    const isMenteePage = request.nextUrl.pathname.startsWith('/mentee');
+
+    const isProtectedRoute = isAdminPage || isDashboardPage || isMentorPage || isMenteePage;
 
     if (!session) {
-        if (isAdminPage || isDashboardPage) {
+        if (isProtectedRoute) {
             return NextResponse.redirect(new URL('/login', request.url));
         }
         return NextResponse.next();
@@ -22,18 +26,45 @@ export async function middleware(request: NextRequest) {
 
     try {
         const { payload } = await jwtVerify(session, JWT_SECRET);
+        const r = (payload.role as string || '').toUpperCase();
         
+        // Se usuário que já tá logado tenta acessar a tela de login
         if (isAuthPage) {
-            return NextResponse.redirect(new URL(payload.role === 'master' ? '/admin/leads' : '/dashboard', request.url));
+            let redirectPath = '/';
+            if (r === 'ADMIN' || r === 'COMERCIAL' || r === 'MASTER') redirectPath = '/admin/leads';
+            else if (r === 'MENTOR') redirectPath = '/mentor';
+            else if (r === 'ALUNO') redirectPath = '/mentee';
+            return NextResponse.redirect(new URL(redirectPath, request.url));
         }
 
-        if (isAdminPage && payload.role !== 'master') {
-            return NextResponse.redirect(new URL('/dashboard', request.url));
+        // Restrições de páginas protegidas
+        if (isAdminPage && r !== 'ADMIN' && r !== 'COMERCIAL' && r !== 'MASTER') {
+            let redirectPath = '/';
+            if (r === 'MENTOR') redirectPath = '/mentor';
+            else if (r === 'ALUNO') redirectPath = '/mentee';
+            else redirectPath = '/login';
+            return NextResponse.redirect(new URL(redirectPath, request.url));
+        }
+
+        if (isMentorPage && r !== 'MENTOR') {
+            let redirectPath = '/';
+            if (r === 'ADMIN' || r === 'COMERCIAL' || r === 'MASTER') redirectPath = '/admin/leads';
+            else if (r === 'ALUNO') redirectPath = '/mentee';
+            else redirectPath = '/login';
+            return NextResponse.redirect(new URL(redirectPath, request.url));
+        }
+
+        if (isMenteePage && r !== 'ALUNO') {
+            let redirectPath = '/';
+            if (r === 'ADMIN' || r === 'COMERCIAL' || r === 'MASTER') redirectPath = '/admin/leads';
+            else if (r === 'MENTOR') redirectPath = '/mentor';
+            else redirectPath = '/login';
+            return NextResponse.redirect(new URL(redirectPath, request.url));
         }
 
     } catch (err) {
         // Token expired/invalid
-        if (isAdminPage || isDashboardPage) {
+        if (isProtectedRoute) {
             const response = NextResponse.redirect(new URL('/login', request.url));
             response.cookies.delete('session');
             return response;
@@ -44,5 +75,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-    matcher: ['/admin/:path*', '/dashboard/:path*', '/login'],
+    matcher: ['/admin/:path*', '/dashboard/:path*', '/mentor/:path*', '/mentee/:path*', '/login'],
 };

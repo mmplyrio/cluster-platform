@@ -16,6 +16,8 @@ import {
     ChevronDown
 } from 'lucide-react';
 
+import { ConvertLeadButton } from '@/components/admin/ConvertLeadButton';
+
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -141,6 +143,9 @@ export default async function LeadDetailsPage({
                                 <span>Interesse: {interesseAnalise}</span>
                             </div>
                         )}
+                        <div className="mt-2 pt-2 border-t border-slate-100 flex justify-end w-full">
+                            <ConvertLeadButton leadId={id} />
+                        </div>
                     </div>
                 </div>
             </section>

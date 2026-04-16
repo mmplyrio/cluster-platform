@@ -76,7 +76,7 @@ export const users = pgTable('users', {
     email: text('email').notNull().unique(),
     phone: text('phone'),
     roleId: uuid('role_id').references(() => roles.id, { onDelete: 'set null' }),
-    passwordHash: text('password_hash').notNull(),
+    passwordHash: text('password_hash'),
     lastLogin: timestamp('last_login'),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     expiresAt: timestamp('expires_at'),
