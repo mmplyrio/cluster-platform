@@ -1,5 +1,5 @@
 import { ComunicacaoOverview } from "@/components/shared/comunicacao/ComunicacaoOverview";
 
-export default function MenteeDashboard() {
+export default function MenteeComunicacaoPage() {
     return <ComunicacaoOverview userRole="ALUNO" />;
 }

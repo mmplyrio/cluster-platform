@@ -6,6 +6,7 @@ import { Hexagon } from "lucide-react"
 import { NavMain } from "@/components/dashboard/nav-main"
 import { NavUser } from "@/components/dashboard/nav-user"
 import { mentorMenu, menteeMenu } from "@/config/navigation"
+import { usePathname } from "next/navigation"
 import {
     Sidebar,
     SidebarContent,
@@ -16,8 +17,7 @@ import {
     SidebarMenuItem,
 } from "@/components/ui/sidebar"
 
-interface AppSidebarProps extends Omit<React.ComponentProps<typeof Sidebar>, "user"> {
-    userRole: 'mentor' | 'mentorado';
+interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
     user: {
         name: string;
         email: string;
@@ -25,8 +25,11 @@ interface AppSidebarProps extends Omit<React.ComponentProps<typeof Sidebar>, "us
     };
 }
 
-export function AppSidebar({ userRole, user, ...props }: AppSidebarProps) {
-    const items = userRole === 'mentor' ? mentorMenu : menteeMenu;
+export function AppSidebar({ user, ...props }: AppSidebarProps) {
+    const pathname = usePathname();
+    const isMentor = pathname.startsWith('/mentor');
+    const items = isMentor ? mentorMenu : menteeMenu;
+    
     return (
         <Sidebar collapsible="offcanvas" {...props}>
             <SidebarHeader className="pt-6">

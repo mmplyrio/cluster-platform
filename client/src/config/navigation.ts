@@ -1,4 +1,4 @@
-import { LayoutDashboard, Users, User, Map, BookOpen, Calendar, MessageSquare, Blocks, Mail, Settings, LucideIcon } from 'lucide-react';
+import { LayoutDashboard, Users, User, Map, BookOpen, Calendar, MessageSquare, Blocks, Mail, Settings, LucideIcon, MapPin, ListTodo } from 'lucide-react';
 
 export type NavItem = {
     title: string;
@@ -15,7 +15,9 @@ export const mentorMenu: NavItem[] = [
 ];
 
 export const menteeMenu: NavItem[] = [
-    { title: 'Minha Trilha', url: '/mentee', icon: Map },
-    { title: 'Materiais', url: '/mentee/materiais', icon: BookOpen },
-    { title: 'Agendamentos', url: '/mentee/agendamentos', icon: Calendar },
+    { title: 'Visão Geral', url: '/mentee', icon: LayoutDashboard },
+    { title: 'A Jornada', url: '/mentee/trilha', icon: MapPin },
+    { title: 'Plano de Ação', url: '/mentee/plano-de-acao', icon: ListTodo },
+    { title: 'Comunicação', url: '/mentee/comunicacao', icon: MessageSquare },
+    { title: 'Configurações', url: '/mentee/configuracoes', icon: Settings },
 ];
