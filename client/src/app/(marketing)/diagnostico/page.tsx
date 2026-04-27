@@ -276,39 +276,60 @@ export default function DiagnosticoFormPage() {
                                             required
                                         />
                                     </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="faturamento">Faturamento Mensal *</Label>
-                                        <Select
-                                            value={lead.faturamentoFaixa}
-                                            onValueChange={(val: string) => setLead({ ...lead, faturamentoFaixa: val })}
-                                        >
-                                            <SelectTrigger id="faturamento">
-                                                <SelectValue placeholder="Selecione a faixa" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="ate-50k">Até R$ 50.000</SelectItem>
-                                                <SelectItem value="50k-100k">De R$ 50k a R$ 100k</SelectItem>
-                                                <SelectItem value="100k-500k">De R$ 100k a R$ 500k</SelectItem>
-                                                <SelectItem value="500k-1m">De R$ 500k a R$ 1M</SelectItem>
-                                                <SelectItem value="mais-1m">Mais de R$ 1M</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="interesse">Interesse em análise estratégica *</Label>
-                                        <Select
-                                            value={lead.interesseAnalise}
-                                            onValueChange={(val: string) => setLead({ ...lead, interesseAnalise: val })}
-                                        >
-                                            <SelectTrigger id="interesse">
-                                                <SelectValue placeholder="Selecione o nível de interesse" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="sim">Sim, quero agendar em breve</SelectItem>
-                                                <SelectItem value="talvez">Talvez mais pra frente</SelectItem>
-                                                <SelectItem value="nao">Não no momento</SelectItem>
-                                            </SelectContent>
-                                        </Select>
+                                    <div className="grid gap-6 md:grid-cols-3 md:col-span-2">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="faturamento">Faturamento Mensal *</Label>
+                                            <Select
+                                                value={lead.faturamentoFaixa}
+                                                onValueChange={(val: string) => setLead({ ...lead, faturamentoFaixa: val })}
+                                            >
+                                                <SelectTrigger id="faturamento">
+                                                    <SelectValue placeholder="Selecione a faixa" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="ate-50k">Até R$ 50.000</SelectItem>
+                                                    <SelectItem value="50k-100k">De R$ 50k a R$ 100k</SelectItem>
+                                                    <SelectItem value="100k-500k">De R$ 100k a R$ 500k</SelectItem>
+                                                    <SelectItem value="500k-1m">De R$ 500k a R$ 1M</SelectItem>
+                                                    <SelectItem value="mais-1m">Mais de R$ 1M</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="segmento">Segmento *</Label>
+                                            <Select
+                                                value={lead.segmento}
+                                                onValueChange={(val: string) => setLead({ ...lead, segmento: val })}
+                                            >
+                                                <SelectTrigger id="segmento">
+                                                    <SelectValue placeholder="Selecione o segmento" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="servicos">Serviços</SelectItem>
+                                                    <SelectItem value="varejo">Varejo</SelectItem>
+                                                    <SelectItem value="industria">Indústria</SelectItem>
+                                                    <SelectItem value="saude">Saúde</SelectItem>
+                                                    <SelectItem value="tecnologia">Tecnologia</SelectItem>
+                                                    <SelectItem value="outros">Outros</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="interesse">Interesse em análise estratégica *</Label>
+                                            <Select
+                                                value={lead.interesseAnalise}
+                                                onValueChange={(val: string) => setLead({ ...lead, interesseAnalise: val })}
+                                            >
+                                                <SelectTrigger id="interesse">
+                                                    <SelectValue placeholder="Selecione o nível de interesse" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="sim">Sim, quero agendar em breve</SelectItem>
+                                                    <SelectItem value="talvez">Talvez mais pra frente</SelectItem>
+                                                    <SelectItem value="nao">Não no momento</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
                                     </div>
 
                                 </div>

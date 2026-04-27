@@ -27,18 +27,18 @@ export type SubmitDiagnosisInput = {
 export async function submitDiagnosis(input: SubmitDiagnosisInput) {
     const API_URL = getApiUrl();
     try {
-        const res = await fetch(`${API_URL}/diagnosis`, {
+        const res = await fetch(`${API_URL}/admin/diagnosis`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(input)
         });
-        
+
         const json = await res.json();
-        
+
         if (json.success) {
             revalidatePath('/admin/leads');
         }
-        
+
         return json;
     } catch (error) {
         console.error('Erro ao processar diagnóstico:', error);
@@ -47,5 +47,20 @@ export async function submitDiagnosis(input: SubmitDiagnosisInput) {
             data: null,
             error: 'Falha ao processar o diagnóstico. Tente novamente.',
         };
+    }
+}
+
+export async function getDiagnosisResult(leadId: string) {
+    if (!leadId) {
+        return { success: false, data: null, error: 'ID é obrigatório' };
+    }
+
+    const API_URL = getApiUrl();
+    try {
+        const res = await fetch(`${API_URL}/admin/diagnosis/${leadId}`, { cache: 'no-store' });
+        return await res.json();
+    } catch (error) {
+        console.error('Erro ao buscar resultado do diagnóstico:', error);
+        return { success: false, data: null, error: 'Falha ao buscar o resultado' };
     }
 }

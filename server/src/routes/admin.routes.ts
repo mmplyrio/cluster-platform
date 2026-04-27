@@ -5,6 +5,7 @@ import { authMiddleware, requireRole } from '../middlewares/auth.middleware';
 const router = Router();
 
 router.post('/diagnosis', AdminController.submitDiagnosis);
+router.get('/diagnosis/:id', AdminController.getDiagnosisResult);
 
 router.use(authMiddleware);
 

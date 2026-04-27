@@ -28,6 +28,7 @@ export class AuthController {
 
             res.json({ success: true, data });
         } catch (error) {
+            console.error('[AuthController.checkEmail] Erro interno:', error);
             res.status(500).json({ success: false, error: 'Erro interno' });
         }
     }
