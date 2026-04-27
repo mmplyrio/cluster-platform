@@ -1,7 +1,21 @@
 import { Request, Response } from 'express';
 import { AdminService } from '../services/admin.service';
+import { BrevoService } from '../services/brevo.service';
 
 export class AdminController {
+    static async getDiagnosisResult(req: Request, res: Response) {
+        try {
+            const data = await AdminService.getDiagnosisResult(req.params.id as string);
+            if (!data) {
+                res.status(404).json({ success: false, error: 'Diagnosis not found' });
+                return;
+            }
+            res.json({ success: true, data, error: null });
+        } catch (error) {
+            res.status(500).json({ success: false, error: 'Server error' });
+        }
+    }
+
     static async getKPIs(req: Request, res: Response) {
         try {
             const data = await AdminService.getKPIs();
@@ -46,6 +60,18 @@ export class AdminController {
         try {
             const { lead, answers } = req.body;
             const data = await AdminService.submitDiagnosis(lead, answers);
+
+            const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
+            const linkResultado = `${frontendUrl}/diagnostico/resultado?id=${data.leadId}`;
+
+            // Dispara o e-mail em background pelo Brevo
+            await BrevoService.enviarEmailDiagnostico(
+                lead.nome, 
+                lead.email, 
+                data.scoreTotal,
+                linkResultado
+            );
+
             res.json({ success: true, data, error: null });
         } catch (error) {
             res.status(500).json({ success: false, error: 'Falha ao processar' });

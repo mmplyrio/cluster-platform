@@ -4,15 +4,15 @@ import { eq, desc, count } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
 
 const SCORING: Record<string, Record<string, number>> = {
-    q1:  { A: 2, B: 4, C: 1, D: 2 },
-    q2:  { A: 2, B: 1, C: 4, D: 2 },
-    q3:  { A: 4, B: 2, C: 1, D: 2 },
-    q4:  { A: 2, B: 4, C: 1, D: 1 },
-    q5:  { A: 1, B: 2, C: 4, D: 1 },
-    q6:  { A: 2, B: 4, C: 1, D: 1 },
-    q7:  { A: 2, B: 4, C: 1, D: 1 },
-    q8:  { A: 2, B: 2, C: 4, D: 1 },
-    q9:  { A: 1, B: 2, C: 4, D: 1 },
+    q1: { A: 2, B: 4, C: 1, D: 2 },
+    q2: { A: 2, B: 1, C: 4, D: 2 },
+    q3: { A: 4, B: 2, C: 1, D: 2 },
+    q4: { A: 2, B: 4, C: 1, D: 1 },
+    q5: { A: 1, B: 2, C: 4, D: 1 },
+    q6: { A: 2, B: 4, C: 1, D: 1 },
+    q7: { A: 2, B: 4, C: 1, D: 1 },
+    q8: { A: 2, B: 2, C: 4, D: 1 },
+    q9: { A: 1, B: 2, C: 4, D: 1 },
     q10: { A: 4, B: 2, C: 1, D: 2 },
 };
 
@@ -78,17 +78,17 @@ export class AdminService {
             temperaturaComercial: leads.interesseAnalise,
             createdAt: leads.createdAt,
         }).from(leads)
-        .leftJoin(scores, eq(leads.id, scores.leadId))
-        .orderBy(desc(leads.createdAt));
+            .leftJoin(scores, eq(leads.id, scores.leadId))
+            .orderBy(desc(leads.createdAt));
     }
 
     static async getLeadDetails(leadId: string) {
         const details = await db.select({
             lead: leads, responses: responses, scores: scores,
         }).from(leads)
-        .leftJoin(responses, eq(leads.id, responses.leadId))
-        .leftJoin(scores, eq(leads.id, scores.leadId))
-        .where(eq(leads.id, leadId));
+            .leftJoin(responses, eq(leads.id, responses.leadId))
+            .leftJoin(scores, eq(leads.id, scores.leadId))
+            .where(eq(leads.id, leadId));
 
         if (!details || details.length === 0) return null;
 
@@ -105,6 +105,30 @@ export class AdminService {
                 scoreTotal: leadData.scores.scoreTotal, scoreInterpretacao: leadData.scores.scoreInterpretacao,
                 scoreCriterio: leadData.scores.scoreCriterio, scoreRotina: leadData.scores.scoreRotina,
                 perfil: leadData.scores.perfil, gargaloPrincipal: leadData.scores.gargaloPrincipal,
+            } : null,
+        };
+    }
+
+    static async getDiagnosisResult(leadId: string) {
+        const details = await db.select({
+            nome: leads.nome,
+            scores: scores,
+        }).from(leads)
+            .leftJoin(scores, eq(leads.id, scores.leadId))
+            .where(eq(leads.id, leadId));
+
+        if (!details || details.length === 0) return null;
+
+        const leadData = details[0];
+        return {
+            nome: leadData.nome,
+            pontuacoes: leadData.scores ? {
+                scoreTotal: leadData.scores.scoreTotal,
+                scoreInterpretacao: leadData.scores.scoreInterpretacao,
+                scoreCriterio: leadData.scores.scoreCriterio,
+                scoreRotina: leadData.scores.scoreRotina,
+                perfil: leadData.scores.perfil,
+                gargaloPrincipal: leadData.scores.gargaloPrincipal,
             } : null,
         };
     }
@@ -148,8 +172,8 @@ export class AdminService {
         if (existing) throw new Error('email_in_use');
 
         const [newUser] = await db.insert(users).values({
-            email, 
-            fullName, 
+            email,
+            fullName,
             roleId: roleObj.id,
         }).returning();
 
@@ -170,14 +194,14 @@ export class AdminService {
         }
 
         const [alunoRole] = await db.select().from(roles).where(eq(roles.name, 'ALUNO'));
-        
+
         let [existingUser] = await db.select().from(users).where(eq(users.email, leadDetails.email!));
-        
+
         if (!existingUser) {
             const [newUser] = await db.insert(users).values({
                 email: leadDetails.email!,
                 fullName: leadDetails.nome!,
-                phone: leadDetails.whatsapp!, 
+                phone: leadDetails.whatsapp!,
                 roleId: alunoRole.id,
             }).returning();
             existingUser = newUser;
