@@ -1,0 +1,17 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.MentorController = void 0;
+const mentor_service_1 = require("../services/mentor.service");
+class MentorController {
+    static async getDashboard(req, res) {
+        try {
+            const mentorId = req.user.userId;
+            const data = await mentor_service_1.MentorService.getDashboard(mentorId);
+            res.json({ success: true, data });
+        }
+        catch (error) {
+            res.status(500).json({ success: false, error: error.message });
+        }
+    }
+}
+exports.MentorController = MentorController;
