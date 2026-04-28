@@ -44,4 +44,15 @@ app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/mentor', mentorRoutes);
 
+// Fallback 404 handler para rotas não encontradas
+app.use((_req, res) => {
+    res.status(404).json({ success: false, error: 'Rota não encontrada' });
+});
+
+// Global error handler
+app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+    console.error('[Global Error]', err);
+    res.status(500).json({ success: false, error: err.message || 'Erro interno no servidor' });
+});
+
 export default app;

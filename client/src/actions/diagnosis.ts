@@ -33,6 +33,13 @@ export async function submitDiagnosis(input: SubmitDiagnosisInput) {
             body: JSON.stringify(input)
         });
 
+        const contentType = res.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            const textResponse = await res.text();
+            console.error('[diagnosis] Resposta não-JSON da API:', res.status, textResponse.substring(0, 200));
+            throw new Error(`A API retornou um formato inválido (${res.status}). Esperado JSON.`);
+        }
+
         const json = await res.json();
 
         if (json.success) {
@@ -58,6 +65,14 @@ export async function getDiagnosisResult(leadId: string) {
     const API_URL = getApiUrl();
     try {
         const res = await fetch(`${API_URL}/admin/diagnosis/${leadId}`, { cache: 'no-store' });
+        
+        const contentType = res.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            const textResponse = await res.text();
+            console.error('[diagnosis] Resposta não-JSON ao buscar resultado:', res.status, textResponse.substring(0, 200));
+            throw new Error(`A API retornou um formato inválido (${res.status}). Esperado JSON.`);
+        }
+
         return await res.json();
     } catch (error) {
         console.error('Erro ao buscar resultado do diagnóstico:', error);

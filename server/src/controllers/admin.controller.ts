@@ -61,7 +61,8 @@ export class AdminController {
             const { lead, answers } = req.body;
             const data = await AdminService.submitDiagnosis(lead, answers);
 
-            const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
+            const frontendUrls = process.env.FRONTEND_URL || "http://localhost:3000";
+            const frontendUrl = frontendUrls.split(',')[0].trim();
             const linkResultado = `${frontendUrl}/diagnostico/resultado?id=${data.leadId}`;
 
             // Dispara o e-mail em background pelo Brevo
