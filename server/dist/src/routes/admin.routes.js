@@ -1,0 +1,16 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const admin_controller_1 = require("../controllers/admin.controller");
+const auth_middleware_1 = require("../middlewares/auth.middleware");
+const router = (0, express_1.Router)();
+router.post('/diagnosis', admin_controller_1.AdminController.submitDiagnosis);
+router.get('/diagnosis/:id', admin_controller_1.AdminController.getDiagnosisResult);
+router.use(auth_middleware_1.authMiddleware);
+router.get('/kpis', (0, auth_middleware_1.requireRole)(['ADMIN', 'COMERCIAL']), admin_controller_1.AdminController.getKPIs);
+router.get('/leads', (0, auth_middleware_1.requireRole)(['ADMIN', 'COMERCIAL']), admin_controller_1.AdminController.getLeads);
+router.get('/leads/:id', (0, auth_middleware_1.requireRole)(['ADMIN', 'COMERCIAL']), admin_controller_1.AdminController.getLeadDetails);
+router.get('/mentors', (0, auth_middleware_1.requireRole)(['ADMIN', 'COMERCIAL']), admin_controller_1.AdminController.getMentors);
+router.post('/leads/:id/convert', (0, auth_middleware_1.requireRole)(['ADMIN', 'COMERCIAL']), admin_controller_1.AdminController.transformToAluno);
+router.post('/team', (0, auth_middleware_1.requireRole)(['ADMIN']), admin_controller_1.AdminController.createTeamMember);
+exports.default = router;
