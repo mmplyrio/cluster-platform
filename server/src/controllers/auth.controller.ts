@@ -55,11 +55,11 @@ export class AuthController {
 
     static async getMe(req: Request, res: Response) {
         try {
-            // This endpoint requires authentication middleware, so req.user will be populated
-            // Since AuthController currently receives basic Request, we need to cast or access it securely.
             const userReq = req as any; 
             const userId = userReq.user?.userId;
             
+            console.log(`[AuthController.getMe] Buscando usuário: ${userId}`);
+
             if (!userId) {
                  res.status(401).json({ success: false, error: 'Não autorizado' });
                  return;
@@ -68,8 +68,17 @@ export class AuthController {
             const data = await AuthService.getMe(userId);
             res.json({ success: true, data });
         } catch (error: any) {
+            console.error(`[AuthController.getMe] Erro: ${error.message}`);
             res.status(401).json({ success: false, error: error.message });
         }
+    }
+
+    static async test(req: Request, res: Response) {
+        res.json({ 
+            success: true, 
+            message: 'Backend is reachable', 
+            timestamp: new Date().toISOString() 
+        });
     }
 
     static async updateMe(req: Request, res: Response) {
