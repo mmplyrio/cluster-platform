@@ -43,5 +43,15 @@ class MentorController {
             res.status(500).json({ success: false, error: error.message });
         }
     }
+    static async createMentee(req, res) {
+        try {
+            const mentorId = req.user.userId;
+            const result = await mentor_service_1.MentorService.createMentee(mentorId, req.body);
+            res.json(result);
+        }
+        catch (error) {
+            res.status(400).json({ success: false, error: error.message });
+        }
+    }
 }
 exports.MentorController = MentorController;

@@ -4,6 +4,7 @@ exports.MentorService = void 0;
 const db_1 = require("../db");
 const schema_1 = require("../db/schema");
 const drizzle_orm_1 = require("drizzle-orm");
+const brevo_service_1 = require("./brevo.service");
 class MentorService {
     static async getDashboard(mentorId) {
         // Obter as empresas/alunos vinculados a este mentor
@@ -161,6 +162,47 @@ class MentorService {
                 ultimaAtualizacao: "há 2 dias"
             }
         ];
+    }
+    static async createMentee(mentorId, data) {
+        // 1. Obter informações do mentor
+        const [mentor] = await db_1.db.select().from(schema_1.users).where((0, drizzle_orm_1.eq)(schema_1.users.id, mentorId));
+        if (!mentor)
+            throw new Error('mentor_not_found');
+        // 2. Garantir que o papel ALUNO exista
+        const [alunoRole] = await db_1.db.select().from(schema_1.roles).where((0, drizzle_orm_1.eq)(schema_1.roles.name, 'ALUNO'));
+        if (!alunoRole)
+            throw new Error('aluno_role_not_found');
+        // 3. Verificar se usuário já existe por email
+        let [user] = await db_1.db.select().from(schema_1.users).where((0, drizzle_orm_1.eq)(schema_1.users.email, data.email));
+        if (!user) {
+            const [newUser] = await db_1.db.insert(schema_1.users).values({
+                email: data.email,
+                fullName: data.nomeContato,
+                phone: data.whatsapp,
+                roleId: alunoRole.id,
+            }).returning();
+            user = newUser;
+        }
+        // 4. Criar a Empresa
+        const [newCompany] = await db_1.db.insert(schema_1.companies).values({
+            nome: data.razaoSocial,
+            cnpj: data.cnpj || null,
+            segmento: data.ramo || null,
+            notes: data.anotacoes || null,
+            mentorId: mentorId,
+            statusPrograma: 'active'
+        }).returning();
+        // 5. Criar a Jornada Inicial
+        await db_1.db.insert(schema_1.journeys).values({
+            companyId: newCompany.id,
+            etapaAtual: 'Diagnóstico',
+            progresso: 0,
+        });
+        // 6. Disparar e-mail de boas-vindas
+        brevo_service_1.BrevoService.enviarEmailBoasVindasMentorado(user.fullName, user.email, mentor.fullName).catch(err => {
+            console.error('Falha ao enviar boas-vindas mentorado:', err);
+        });
+        return { success: true, companyId: newCompany.id };
     }
 }
 exports.MentorService = MentorService;

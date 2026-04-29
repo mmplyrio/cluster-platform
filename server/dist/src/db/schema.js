@@ -76,6 +76,8 @@ exports.users = (0, pg_core_1.pgTable)('users', {
     lastLogin: (0, pg_core_1.timestamp)('last_login'),
     createdAt: (0, pg_core_1.timestamp)('created_at').defaultNow().notNull(),
     expiresAt: (0, pg_core_1.timestamp)('expires_at'),
+    resetPasswordToken: (0, pg_core_1.text)('reset_password_token'),
+    resetPasswordExpires: (0, pg_core_1.timestamp)('reset_password_expires'),
 });
 // --- Mentorship Execution Environment ---
 // 8. Companies (Mentorship Clients)
@@ -87,6 +89,8 @@ exports.companies = (0, pg_core_1.pgTable)('companies', {
     mentorId: (0, pg_core_1.uuid)('mentor_id').references(() => exports.users.id, { onDelete: 'set null' }),
     leadId: (0, pg_core_1.uuid)('lead_id').references(() => exports.leads.id, { onDelete: 'set null' }), // Link back to diagnostic
     statusPrograma: (0, pg_core_1.text)('status_programa'), // active, paused, finished
+    cnpj: (0, pg_core_1.text)('cnpj'),
+    notes: (0, pg_core_1.text)('notes'),
     createdAt: (0, pg_core_1.timestamp)('created_at').defaultNow().notNull(),
 });
 // 9. Company Users (Many-to-Many relationship between Users and Companies)
