@@ -150,3 +150,53 @@ export async function setupPasswordAction(prevState: any, formData: FormData) {
     else if (r === 'ALUNO') redirectPath = '/mentee';
     redirect(redirectPath);
 }
+
+export async function forgotPasswordAction(prevState: any, formData: FormData) {
+    const email = formData.get('email');
+    if (!email) return { error: 'O e-mail é obrigatório.' };
+
+    const API_URL = getApiUrl();
+    try {
+        const res = await fetch(`${API_URL}/auth/forgot-password`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email }),
+        });
+
+        if (!res.ok) {
+            return { error: 'Ocorreu um erro ao processar sua solicitação.' };
+        }
+
+        return { success: true, message: 'Se o e-mail estiver cadastrado, você receberá um link de recuperação.' };
+    } catch (e) {
+        return { error: 'Erro de comunicação com o servidor.' };
+    }
+}
+
+export async function resetPasswordAction(prevState: any, formData: FormData) {
+    const token = formData.get('token');
+    const password = formData.get('password');
+    const confirmPassword = formData.get('confirmPassword');
+
+    if (!token) return { error: 'Token inválido ou expirado.' };
+    if (!password || !confirmPassword) return { error: 'Preencha todos os campos.' };
+    if (password !== confirmPassword) return { error: 'As senhas não coincidem.' };
+
+    const API_URL = getApiUrl();
+    try {
+        const res = await fetch(`${API_URL}/auth/reset-password`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token, password }),
+        });
+
+        const result = await res.json();
+        if (!res.ok || !result.success) {
+            return { error: result.error || 'Erro ao redefinir senha.' };
+        }
+
+        return { success: true };
+    } catch (e) {
+        return { error: 'Erro de comunicação com o servidor.' };
+    }
+}

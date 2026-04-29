@@ -2,6 +2,7 @@ import { db } from '../db';
 import { leads, scores, responses, appointments, funnelEvents, users, roles, companies, journeys } from '../db/schema';
 import { eq, desc, count } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
+import { BrevoService } from './brevo.service';
 
 const SCORING: Record<string, Record<string, number>> = {
     q1: { A: 2, B: 4, C: 1, D: 2 },
@@ -176,6 +177,11 @@ export class AdminService {
             fullName,
             roleId: roleObj.id,
         }).returning();
+
+        // Envia e-mail de boas-vindas em background
+        BrevoService.enviarEmailBoasVindasEquipe(fullName, email).catch(err => {
+            console.error('Falha ao enviar e-mail de boas-vindas para equipe:', err);
+        });
 
         return newUser;
     }

@@ -89,5 +89,41 @@ export class AuthController {
             res.status(500).json({ success: false, error: error.message });
         }
     }
+
+    static async forgotPassword(req: Request, res: Response) {
+        try {
+            const { email } = req.body;
+            if (!email) {
+                res.status(400).json({ success: false, error: 'Email é obrigatório' });
+                return;
+            }
+            await AuthService.forgotPassword(email);
+            res.json({ success: true, message: 'E-mail de recuperação enviado' });
+        } catch (error: any) {
+            // Even if user not found, we might want to return success to avoid email enumeration
+            // But here the user specifically asked for "segurança", and usually companies prefer to be explicit or not.
+            // I'll return success anyway but log the error if it's not 'user_not_found'.
+            if (error.message === 'user_not_found') {
+                res.json({ success: true, message: 'E-mail de recuperação enviado' });
+            } else {
+                console.error('[AuthController.forgotPassword] Error:', error);
+                res.status(500).json({ success: false, error: 'Erro interno' });
+            }
+        }
+    }
+
+    static async resetPassword(req: Request, res: Response) {
+        try {
+            const { token, password } = req.body;
+            if (!token || !password) {
+                res.status(400).json({ success: false, error: 'Token e senha são obrigatórios' });
+                return;
+            }
+            await AuthService.resetPassword(token, password);
+            res.json({ success: true, message: 'Senha atualizada com sucesso' });
+        } catch (error: any) {
+            res.status(400).json({ success: false, error: error.message });
+        }
+    }
 }
 

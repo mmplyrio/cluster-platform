@@ -3,6 +3,9 @@ import { users, roles } from '../db/schema';
 import bcrypt from 'bcryptjs';
 import { eq } from 'drizzle-orm';
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
+import { BrevoService } from './brevo.service';
+import { and, gt } from 'drizzle-orm';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret_key_change_in_production';
 
@@ -138,6 +141,47 @@ export class AuthService {
         if (Object.keys(updateData).length === 0) return { success: true };
 
         await db.update(users).set(updateData).where(eq(users.id, userId));
+        return { success: true };
+    }
+    static async forgotPassword(email: string) {
+        const [user] = await db.select().from(users).where(eq(users.email, email));
+        if (!user) throw new Error('user_not_found');
+
+        const token = crypto.randomBytes(32).toString('hex');
+        const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+        const expires = new Date(Date.now() + 3600000); // 1 hour
+
+        await db.update(users).set({
+            resetPasswordToken: hashedToken,
+            resetPasswordExpires: expires
+        }).where(eq(users.id, user.id));
+
+        const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
+        await BrevoService.enviarEmailRecuperacaoSenha(user.fullName, user.email, resetLink);
+
+        return { success: true };
+    }
+
+    static async resetPassword(token: string, password: string) {
+        const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+
+        const [user] = await db.select().from(users).where(
+            and(
+                eq(users.resetPasswordToken, hashedToken),
+                gt(users.resetPasswordExpires, new Date())
+            )
+        );
+
+        if (!user) throw new Error('invalid_or_expired_token');
+
+        const hash = await bcrypt.hash(password, 10);
+        await db.update(users).set({
+            passwordHash: hash,
+            resetPasswordToken: null,
+            resetPasswordExpires: null,
+            lastLogin: user.lastLogin || new Date() // If first access, mark as logged in
+        }).where(eq(users.id, user.id));
+
         return { success: true };
     }
 }

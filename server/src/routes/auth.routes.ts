@@ -11,4 +11,7 @@ router.post('/login', AuthController.login);
 router.get('/me', authMiddleware, AuthController.getMe);
 router.put('/me', authMiddleware, AuthController.updateMe);
 
+router.post('/forgot-password', AuthController.forgotPassword);
+router.post('/reset-password', AuthController.resetPassword);
+
 export default router;

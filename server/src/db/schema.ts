@@ -80,6 +80,8 @@ export const users = pgTable('users', {
     lastLogin: timestamp('last_login'),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     expiresAt: timestamp('expires_at'),
+    resetPasswordToken: text('reset_password_token'),
+    resetPasswordExpires: timestamp('reset_password_expires'),
 });
 
 // --- Mentorship Execution Environment ---
@@ -93,6 +95,8 @@ export const companies = pgTable('companies', {
     mentorId: uuid('mentor_id').references(() => users.id, { onDelete: 'set null' }),
     leadId: uuid('lead_id').references(() => leads.id, { onDelete: 'set null' }), // Link back to diagnostic
     statusPrograma: text('status_programa'), // active, paused, finished
+    cnpj: text('cnpj'),
+    notes: text('notes'),
     createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 

@@ -42,4 +42,14 @@ export class MentorController {
             res.status(500).json({ success: false, error: error.message });
         }
     }
+
+    static async createMentee(req: AuthRequest, res: Response) {
+        try {
+            const mentorId = req.user!.userId;
+            const result = await MentorService.createMentee(mentorId, req.body);
+            res.json(result);
+        } catch (error: any) {
+            res.status(400).json({ success: false, error: error.message });
+        }
+    }
 }
