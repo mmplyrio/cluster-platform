@@ -15,11 +15,15 @@ async function getUserProfile() {
       cache: 'no-store'
     });
     
-    if (!res.ok) return null;
+    if (!res.ok) {
+      console.error(`[getUserProfile] Backend retornou status ${res.status} para ${apiUrl}/auth/me`);
+      return null;
+    }
     const json = await res.json();
     return json.data;
   } catch (error) {
-    console.error("Erro ao buscar perfil do usuário:", error);
+    console.error("[getUserProfile] Falha ao conectar com o backend:", error instanceof Error ? error.message : error);
+    console.error("[getUserProfile] API_URL utilizada:", apiUrl);
     return null;
   }
 }
@@ -32,6 +36,7 @@ export default async function DashboardLayout({
   const user = await getUserProfile();
   
   if (!user) {
+    (await cookies()).delete('session');
     redirect('/login');
   }
 
