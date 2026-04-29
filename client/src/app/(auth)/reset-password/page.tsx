@@ -13,7 +13,9 @@ import { Input } from "@/components/ui/input";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 
-export default function ResetPasswordPage() {
+import { Suspense } from "react";
+
+function ResetPasswordContent() {
     const searchParams = useSearchParams();
     const token = searchParams.get("token");
     const [state, action, isPending] = useActionState(resetPasswordAction, null);
@@ -79,5 +81,17 @@ export default function ResetPasswordPage() {
                 </Field>
             </FieldGroup>
         </form>
+    );
+}
+
+export default function ResetPasswordPage() {
+    return (
+        <Suspense fallback={
+            <div className="flex items-center justify-center p-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#f84f08]"></div>
+            </div>
+        }>
+            <ResetPasswordContent />
+        </Suspense>
     );
 }
