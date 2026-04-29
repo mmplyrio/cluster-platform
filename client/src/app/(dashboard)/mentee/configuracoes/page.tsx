@@ -1,17 +1,22 @@
 "use client";
 
-import { useState } from "react";
-import { User, Bell } from "lucide-react";
+import { useEffect, useState } from "react";
+import { User, Users, Bell } from "lucide-react";
 
 // Importando os componentes shared
 import { UserProfileForm } from "@/components/shared/configuracoes/UserProfileForm";
 import { UserManagement } from "@/components/shared/configuracoes/UserManagement";
+import { useSidebar } from "@/components/ui/sidebar";
 
-export default function MenteeConfiguracoesPage() {
-    // Aluno logado
-    const userRole: "MENTOR" | "ALUNO" | "ADMIN" = "ALUNO";
-
+export default function ConfiguracoesPage() {
+    const { user } = useSidebar();
     const [activeTab, setActiveTab] = useState("perfil");
+
+    const userRole = user?.role || "ALUNO";
+
+    if (!user) {
+        return <div className="p-8 text-center text-slate-500">Carregando configurações...</div>;
+    }
 
     return (
         <div className="max-w-8xl mx-auto p-6 space-y-6 h-full">
@@ -49,7 +54,7 @@ export default function MenteeConfiguracoesPage() {
 
                 {/* ÁREA DE CONTEÚDO */}
                 <main className="flex-1 w-full min-w-0">
-                    {activeTab === "perfil" && <UserProfileForm />}
+                    {activeTab === "perfil" && <UserProfileForm initialUser={user} />}
                     {activeTab === "notificacoes" && (
                         <div className="p-8 border-2 border-dashed border-slate-200 rounded-xl text-center text-slate-400">
                             Preferências de notificação em construção...

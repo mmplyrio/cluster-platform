@@ -4,27 +4,29 @@ import { ProgramDistributionChart, ChartData } from "@/components/mentor/Program
 import { BottleneckChart, BottleneckData } from "@/components/mentor/BottleneckChart";
 import { NovaTurmaSheet } from "@/components/mentor/NovaTurmaSheet";
 
-const turmas: Turmas[] = [
-    { id: "1", nome: "Turma de Abril", qtdAlunos: "10", status: "Em Andamento" },
-    { id: "2", nome: "Turma de Maio", qtdAlunos: "12", status: "Inscrições Abertas" },
-    { id: "3", nome: "Turma de Junho", qtdAlunos: "15", status: "Concluída" },
-];
-const chartData: ChartData[] = [
-    { name: "Turma 1", value: 400 },
-    { name: "Turma 2", value: 300 },
-    { name: "Turma 3", value: 200 },
-    { name: "Turma 4", value: 100 },
-];
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 
-const bottleneckData: BottleneckData[] = [
-    { etapa: "Diagnóstico", alunosTravados: 12 },
-    { etapa: "Planejamento", alunosTravados: 8 },
-    { etapa: "Execução", alunosTravados: 15 },
-    { etapa: "Validação", alunosTravados: 5 },
-];
+async function getTurmasData() {
+    const token = (await cookies()).get('session')?.value;
+    if (!token) redirect('/login');
 
+    const apiUrl = process.env.INTERNAL_API_URL || 'http://localhost:4000/api';
+    const res = await fetch(`${apiUrl}/mentor/turmas`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+        cache: 'no-store'
+    });
 
-export default function MentorPage() {
+    if (!res.ok) {
+        return { turmas: [], chartData: [], bottleneckData: [] };
+    }
+
+    const json = await res.json();
+    return json.data || { turmas: [], chartData: [], bottleneckData: [] };
+}
+
+export default async function MentorPage() {
+    const { turmas, chartData, bottleneckData } = await getTurmasData();
     return (
         <div className="space-y-6">
             <div className="flex justify-between">
@@ -34,7 +36,7 @@ export default function MentorPage() {
                 </div>
                 <NovaTurmaSheet />
             </div>
-            <MentorDashboard />
+            <div className="hidden"> {/* MentorDashboard omitted here as it's typically on the main dashboard but kept hidden or fetched if needed */} </div>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <TableTurmas data={turmas} />
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

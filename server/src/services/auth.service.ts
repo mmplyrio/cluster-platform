@@ -106,4 +106,38 @@ export class AuthService {
 
         return { token, user: { id: user.id, email: user.email, fullName: user.fullName, role: user.roleName } };
     }
+
+    static async getMe(userId: string) {
+        const [user] = await db.select({
+            id: users.id, 
+            email: users.email, 
+            fullName: users.fullName, 
+            roleName: roles.name 
+        }).from(users)
+        .leftJoin(roles, eq(users.roleId, roles.id))
+        .where(eq(users.id, userId));
+
+        if (!user) throw new Error('user_not_found');
+
+        return {
+            id: user.id,
+            name: user.fullName,
+            email: user.email,
+            role: user.roleName,
+            avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(user.fullName)}&background=random` // Provide a nice fallback avatar based on name
+        };
+    }
+    static async updateMe(userId: string, data: { fullName?: string, email?: string, password?: string }) {
+        const updateData: any = {};
+        if (data.fullName) updateData.fullName = data.fullName;
+        if (data.email) updateData.email = data.email;
+        if (data.password) {
+            updateData.passwordHash = await bcrypt.hash(data.password, 10);
+        }
+
+        if (Object.keys(updateData).length === 0) return { success: true };
+
+        await db.update(users).set(updateData).where(eq(users.id, userId));
+        return { success: true };
+    }
 }

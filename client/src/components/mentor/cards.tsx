@@ -1,21 +1,27 @@
 import { StatCard } from "@/components/mentor/StatCard";
 import { NotebookPen, Users, FileWarning, Calendar } from "lucide-react";
 
-export default function MentorDashboard() {
-    // Array de dados simulando o que virá do seu banco de dados (Drizzle/Supabase)
-    const metricas = [
+export interface MetricaDash {
+    title: string;
+    value: number | string;
+    description: string;
+}
+
+export default function MentorDashboard({ metricas }: { metricas?: MetricaDash[] }) {
+    // Valores padrão ou os passados pelo backend
+    const defaultMetricas = [
         {
             title: "Turmas Ativas",
-            value: 4,
+            value: 0,
             description: "Mentorias em andamento",
             icon: NotebookPen,
-            iconColor: "text-[#f84f08]", // Sua cor original mantida aqui!
+            iconColor: "text-[#f84f08]",
             linkText: "Ver todas as turmas",
             linkUrl: "/mentor/turmas"
         },
         {
             title: "Alunos Ativos",
-            value: 28,
+            value: 0,
             description: "Acessaram nos últimos 7 dias",
             icon: Users,
             iconColor: "text-blue-500",
@@ -24,7 +30,7 @@ export default function MentorDashboard() {
         },
         {
             title: "Revisões Pendentes",
-            value: 12,
+            value: 0,
             description: "Aguardando sua análise",
             icon: FileWarning,
             iconColor: "text-amber-500",
@@ -33,7 +39,7 @@ export default function MentorDashboard() {
         },
         {
             title: "Sessões na Semana",
-            value: 3,
+            value: 0,
             description: "Próxima hoje, 14h",
             icon: Calendar,
             iconColor: "text-emerald-500",
@@ -42,10 +48,18 @@ export default function MentorDashboard() {
         }
     ];
 
+    const displayMetricas = defaultMetricas.map(dm => {
+        const found = metricas?.find(m => m.title === dm.title);
+        if (found) {
+            return { ...dm, value: found.value, description: found.description || dm.description };
+        }
+        return dm;
+    });
+
     return (
         <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-                {metricas.map((item, index) => (
+                {displayMetricas.map((item, index) => (
                     <StatCard
                         key={index}
                         title={item.title}

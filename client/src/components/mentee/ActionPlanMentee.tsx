@@ -13,32 +13,10 @@ import { NovaAcaoEquipeSheet } from "./NovaAcaoEquipeSheet"; // <--- Importando 
 
 const ETAPAS_DINAMICAS = ["0-30 Dias (Emergencial)", "31-60 Dias (Estruturação)", "61-90 Dias (Otimização)"];
 
-export function ActionPlanMentee() {
+export function ActionPlanMentee({ tarefasIniciais = [] }: { tarefasIniciais?: TarefaMentee[] }) {
 
-    // Mock com a propriedade 'origem' adicionada
-    const [tarefas, setTarefas] = useState<TarefaMentee[]>([
-        {
-            id: "t1", titulo: "Renegociar dívida fornecedor X", objetivo: "Reduzir passivo de curto prazo",
-            etapa: "0-30 Dias (Emergencial)", prioridade: "Alta", responsavel: "Financeiro",
-            indicador: "Novo contrato assinado com desconto", prazo: "2026-04-20", status: "Pendente",
-            detalhamento: "Entrar em contato com o gerente e pedir revisão das taxas.",
-            subtarefas: [
-                { id: "sub1", texto: "Levantar histórico de compras", concluida: true }
-            ],
-            notaExecucao: "",
-            origem: "MENTOR"
-        },
-        {
-            // Simulação de uma tarefa que o próprio aluno já havia criado
-            id: "sub-1", titulo: "Coletar propostas comerciais de ERPs", objetivo: "Iniciativa Interna da Equipe",
-            etapa: "31-60 Dias (Estruturação)", prioridade: "Média", responsavel: "Eu (Aluno)",
-            indicador: "Conclusão da atividade", prazo: "2026-04-28", status: "Pendente",
-            detalhamento: "Ligar para 3 fornecedores.",
-            subtarefas: [],
-            notaExecucao: "",
-            origem: "ALUNO"
-        }
-    ]);
+    // Utilizar os dados vindos do backend como estado inicial
+    const [tarefas, setTarefas] = useState<TarefaMentee[]>(tarefasIniciais);
 
     const [tarefaSelecionada, setTarefaSelecionada] = useState<TarefaMentee | null>(null);
     const [isNovaAcaoOpen, setIsNovaAcaoOpen] = useState(false); // Estado para o modal novo

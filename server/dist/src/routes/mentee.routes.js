@@ -1,0 +1,10 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const mentee_controller_1 = require("../controllers/mentee.controller");
+const auth_middleware_1 = require("../middlewares/auth.middleware");
+const router = (0, express_1.Router)();
+router.use(auth_middleware_1.authMiddleware);
+router.get('/trilha', (0, auth_middleware_1.requireRole)(['ALUNO']), mentee_controller_1.MenteeController.getTrilha);
+router.get('/plano-de-acao', (0, auth_middleware_1.requireRole)(['ALUNO']), mentee_controller_1.MenteeController.getPlanoAcao);
+exports.default = router;

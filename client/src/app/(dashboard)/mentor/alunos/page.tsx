@@ -8,14 +8,29 @@ import { NovoAvisoSheet } from "@/components/mentor/NovoAvisoSheet";
 import { CRMFiltros } from "@/components/mentor/CRMFiltros";
 import { TableCRM, CRMClient } from "@/components/mentor/TableCRM";
 
-export default function GestaoDeAlunos() {
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 
-    // Dados simulados para a tabela não ficar vazia
-    const clientesGlobais: CRMClient[] = [
-        { id: "1", empresa: "Tech Solutions Ltda", contato: "João Paulo", turmaAtual: "Agosto 2026 - Lucro Estruturado", ultimoAcesso: "Hoje, 10:30", status: "Ativo" },
-        { id: "2", empresa: "Comercial Silva", contato: "Maria Silva", turmaAtual: "Agosto 2026 - Lucro Estruturado", ultimoAcesso: "Há 3 dias", status: "Pausado" },
-        { id: "3", empresa: "Padaria do João", contato: "João Pedro", turmaAtual: null, ultimoAcesso: "Há 2 meses", status: "Alumni" },
-    ];
+async function getAlunosData() {
+    const token = (await cookies()).get('session')?.value;
+    if (!token) redirect('/login');
+
+    const apiUrl = process.env.INTERNAL_API_URL || 'http://localhost:4000/api';
+    const res = await fetch(`${apiUrl}/mentor/alunos`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+        cache: 'no-store'
+    });
+
+    if (!res.ok) {
+        return { stats: null, clientes: [] };
+    }
+
+    const json = await res.json();
+    return json.data || { stats: null, clientes: [] };
+}
+
+export default async function GestaoDeAlunos() {
+    const { stats, clientes } = await getAlunosData();
 
     return (
         <div className="space-y-6">
@@ -31,31 +46,31 @@ export default function GestaoDeAlunos() {
                 </div>
             </div>
 
-            {/* Linha de Métricas - CORRIGIDO: Adicionado a propriedade 'description' */}
+            {/* Linha de Métricas */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <StatCard
                     title="Total de Empresas"
-                    value="42"
+                    value={stats?.totalEmpresas || 0}
                     description="Cadastradas na base"
                     icon={Building2}
                 />
                 <StatCard
                     title="Em Mentoria Ativa"
-                    value="28"
+                    value={stats?.emMentoriaAtiva || 0}
                     description="Vinculadas a turmas"
                     icon={Users}
                     iconColor="text-emerald-500"
                 />
                 <StatCard
                     title="Atenção Necessária"
-                    value="3"
+                    value={stats?.atencaoNecessaria || 0}
                     description="Alunos pausados/risco"
                     icon={AlertTriangle}
                     iconColor="text-amber-500"
                 />
                 <StatCard
                     title="Taxa de Conclusão"
-                    value="85%"
+                    value={stats?.taxaConclusao || "0%"}
                     description="Histórico geral"
                     icon={Trophy}
                     iconColor="text-blue-500"
@@ -68,7 +83,7 @@ export default function GestaoDeAlunos() {
                     <CRMFiltros />
                 </CardHeader>
                 <CardContent className="p-0">
-                    <TableCRM data={clientesGlobais} />
+                    <TableCRM data={clientes} />
                 </CardContent>
             </Card>
         </div>
