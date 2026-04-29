@@ -67,10 +67,10 @@ export function BroadcastMural({ userRole }: BroadcastMuralProps) {
     const isGestor = userRole === "MENTOR" || userRole === "ADMIN";
 
     return (
-        <div className="flex flex-col h-full bg-slate-50/30">
+        <div className="flex flex-col h-full min-h-0 bg-slate-50/30">
 
             {/* HEADER DO MURAL */}
-            <div className="p-6 bg-white border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="p-4 md:p-6 bg-white border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4 shrink-0">
                 <div>
                     <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
                         <Megaphone className="w-5 h-5 text-[#f84f08]" />
@@ -88,7 +88,7 @@ export function BroadcastMural({ userRole }: BroadcastMuralProps) {
             </div>
 
             {/* FILTROS E BUSCA */}
-            <div className="p-4 bg-white border-b border-slate-100 flex gap-3">
+            <div className="p-4 bg-white border-b border-slate-100 flex gap-3 shrink-0">
                 <div className="relative flex-1">
                     <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
                     <Input placeholder="Buscar por título ou conteúdo..." className="pl-10 bg-slate-50 border-slate-200" />
@@ -99,7 +99,7 @@ export function BroadcastMural({ userRole }: BroadcastMuralProps) {
             </div>
 
             {/* LISTA DE AVISOS */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-4">
+            <div className="flex-1 overflow-y-auto min-h-0 p-4 md:p-6 space-y-4">
                 {avisos.map((aviso) => (
                     <div key={aviso.id} className="bg-white border border-slate-200 rounded-2xl shadow-sm hover:shadow-md transition-shadow overflow-hidden group">
                         <div className="p-5">

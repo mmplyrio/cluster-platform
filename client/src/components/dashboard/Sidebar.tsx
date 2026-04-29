@@ -17,6 +17,8 @@ import {
     SidebarMenuItem,
 } from "@/components/ui/sidebar"
 
+import { LogoBranca } from '@/components/ui/logobranca'
+
 interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
     user: {
         name: string;
@@ -29,7 +31,7 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
     const pathname = usePathname();
     const isMentor = pathname.startsWith('/mentor');
     const items = isMentor ? mentorMenu : menteeMenu;
-    
+
     return (
         <Sidebar collapsible="offcanvas" {...props}>
             <SidebarHeader className="pt-6">
@@ -40,8 +42,7 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
                             className="data-[slot=sidebar-menu-button]:p-1.5!"
                         >
                             <a href="/dashboard">
-                                <Hexagon className="size-5!" />
-                                <span className="text-base font-semibold">Cluster Platform</span>
+                                <LogoBranca />
                             </a>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
