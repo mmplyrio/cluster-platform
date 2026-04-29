@@ -4,6 +4,7 @@ import cors from 'cors';
 import authRoutes from './routes/auth.routes';
 import adminRoutes from './routes/admin.routes';
 import mentorRoutes from './routes/mentor.routes';
+import menteeRoutes from './routes/mentee.routes';
 
 const app = express();
 
@@ -43,6 +44,7 @@ app.get('/health', (_req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/mentor', mentorRoutes);
+app.use('/api/mentee', menteeRoutes);
 
 // Fallback 404 handler para rotas não encontradas
 app.use((_req, res) => {

@@ -1,6 +1,3 @@
-"use client";
-
-import { useState } from "react";
 import Link from "next/link";
 import {
     Plus,
@@ -22,26 +19,30 @@ import {
     DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 
-export default function MentorshipListPage() {
-    // Mock de mentorias criadas
-    const [mentorias] = useState([
-        {
-            id: "m1",
-            titulo: "Programa Lucro Estruturado",
-            status: "Ativo",
-            alunosAtivos: 42,
-            faturamentoTotal: "R$ 630.000,00",
-            ultimaAtualizacao: "há 2 dias"
-        },
-        {
-            id: "m2",
-            titulo: "Mentoria Fast Track Financeiro",
-            status: "Rascunho",
-            alunosAtivos: 0,
-            faturamentoTotal: "R$ 0,00",
-            ultimaAtualizacao: "há 5 horas"
-        }
-    ]);
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
+
+async function getBuilderData() {
+    const token = (await cookies()).get('session')?.value;
+    if (!token) redirect('/login');
+
+    const apiUrl = process.env.INTERNAL_API_URL || 'http://localhost:4000/api';
+    const res = await fetch(`${apiUrl}/mentor/builder`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+        cache: 'no-store'
+    });
+
+    if (!res.ok) {
+        return [];
+    }
+
+    const json = await res.json();
+    return json.data || [];
+}
+
+export default async function MentorshipListPage() {
+    const mentorias = await getBuilderData();
+
 
     return (
         <div className="p-8 space-y-8 max-w-7xl mx-auto">
@@ -92,7 +93,7 @@ export default function MentorshipListPage() {
 
             {/* LISTAGEM DE PRODUTOS */}
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                {mentorias.map((mentoria) => (
+                {mentorias.map((mentoria: any) => (
                     <div key={mentoria.id} className="bg-white border border-slate-200 rounded-2xl shadow-sm hover:shadow-md transition-all flex flex-col group overflow-hidden">
 
                         <div className="p-6 flex-1 space-y-4">

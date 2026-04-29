@@ -52,4 +52,42 @@ export class AuthController {
             res.status(401).json({ success: false, error: error.message });
         }
     }
+
+    static async getMe(req: Request, res: Response) {
+        try {
+            // This endpoint requires authentication middleware, so req.user will be populated
+            // Since AuthController currently receives basic Request, we need to cast or access it securely.
+            const userReq = req as any; 
+            const userId = userReq.user?.userId;
+            
+            if (!userId) {
+                 res.status(401).json({ success: false, error: 'Não autorizado' });
+                 return;
+            }
+
+            const data = await AuthService.getMe(userId);
+            res.json({ success: true, data });
+        } catch (error: any) {
+            res.status(404).json({ success: false, error: error.message });
+        }
+    }
+
+    static async updateMe(req: Request, res: Response) {
+        try {
+            const userReq = req as any;
+            const userId = userReq.user?.userId;
+
+            if (!userId) {
+                res.status(401).json({ success: false, error: 'Não autorizado' });
+                return;
+            }
+
+            const { fullName, email, password } = req.body;
+            const result = await AuthService.updateMe(userId, { fullName, email, password });
+            res.json(result);
+        } catch (error: any) {
+            res.status(500).json({ success: false, error: error.message });
+        }
+    }
 }
+

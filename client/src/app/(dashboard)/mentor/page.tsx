@@ -22,13 +22,14 @@ async function getDashboardData() {
     }
 
     const json = await res.json();
-    return json.data;
+    return json.data || {};
 }
 
 export default async function MentorPage() {
     const data = await getDashboardData();
     const alunos = data?.alunos || [];
     const avisos = data?.avisos || [];
+    const metricas = data?.metricas || [];
 
     return (
         <div className="space-y-6">
@@ -36,7 +37,7 @@ export default async function MentorPage() {
                 <h1 className="text-2xl font-bold text-slate-800">Visão Geral</h1>
                 <p className="text-slate-600">Bem-vindo ao painel de controle do Mentor.</p>
             </div>
-            <MentorDashboard />
+            <MentorDashboard metricas={metricas} />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <TableMentee data={alunos} />
                 <AvisosList avisos={avisos} />

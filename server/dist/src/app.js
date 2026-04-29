@@ -8,6 +8,7 @@ const cors_1 = __importDefault(require("cors"));
 const auth_routes_1 = __importDefault(require("./routes/auth.routes"));
 const admin_routes_1 = __importDefault(require("./routes/admin.routes"));
 const mentor_routes_1 = __importDefault(require("./routes/mentor.routes"));
+const mentee_routes_1 = __importDefault(require("./routes/mentee.routes"));
 const app = (0, express_1.default)();
 // Suporta múltiplas URLs separadas por vírgula, ex: "https://app.vercel.app,https://preview.vercel.app"
 const rawFrontendUrls = process.env.FRONTEND_URL || '';
@@ -41,6 +42,7 @@ app.get('/health', (_req, res) => {
 app.use('/api/auth', auth_routes_1.default);
 app.use('/api/admin', admin_routes_1.default);
 app.use('/api/mentor', mentor_routes_1.default);
+app.use('/api/mentee', mentee_routes_1.default);
 // Fallback 404 handler para rotas não encontradas
 app.use((_req, res) => {
     res.status(404).json({ success: false, error: 'Rota não encontrada' });

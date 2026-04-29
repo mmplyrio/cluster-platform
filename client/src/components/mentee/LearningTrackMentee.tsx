@@ -21,18 +21,16 @@ import {
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 
-const MODULOS_BASE = [
-    { id: "mod1", titulo: "1. Diagnosticar", objetivo: "Análise situacional e saúde financeira.", statusInicial: "concluido" },
-    { id: "mod2", titulo: "2. Organizar", objetivo: "Estruturação de processos e fluxos operacionais.", statusInicial: "concluido" },
-    { id: "mod3", titulo: "3. Prever", objetivo: "Projeção de fluxo de caixa e cenários futuros.", statusInicial: "andamento" },
-    { id: "mod4", titulo: "4. Calibrar", objetivo: "Ajuste de precificação e margens de lucro.", statusInicial: "bloqueado" },
-    { id: "mod5", titulo: "5. Rotinizar", objetivo: "Criação de rotinas de gestão e dashboards.", statusInicial: "bloqueado" },
-    { id: "mod6", titulo: "6. Crescer", objetivo: "Escalabilidade e novos canais de venda.", statusInicial: "bloqueado" },
-];
+export interface ModuloTrack {
+    id: string;
+    titulo: string;
+    objetivo: string;
+    statusInicial: string;
+}
 
-export function LearningTrackMentee() {
+export function LearningTrackMentee({ modulos = [] }: { modulos?: ModuloTrack[] }) {
     // Para o aluno, o status é estático (governado pelo mentor/backend)
-    const statusModulos = Object.fromEntries(MODULOS_BASE.map(m => [m.id, m.statusInicial]));
+    const statusModulos = Object.fromEntries(modulos.map(m => [m.id, m.statusInicial]));
     
     // Simulação p/ demonstrar envio de arquivo
     const [enviado, setEnviado] = useState(false);
@@ -58,8 +56,8 @@ export function LearningTrackMentee() {
             </div>
 
             <div className="p-2">
-                <Accordion type="single" collapsible defaultValue="mod3" className="space-y-2">
-                    {MODULOS_BASE.map((modulo) => {
+                <Accordion type="single" collapsible defaultValue={modulos[0]?.id || "mod1"} className="space-y-2">
+                    {modulos.map((modulo) => {
                         const statusAtual = statusModulos[modulo.id];
                         const isBloqueado = statusAtual === "bloqueado";
                         const isConcluido = statusAtual === "concluido";
