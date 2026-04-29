@@ -6,7 +6,7 @@ import { convertLeadToAlunoAction } from '@/actions/admin';
 import { Check, UserPlus, Loader2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-export function ConvertLeadButton({ leadId, mentors }: { leadId: string, mentors: Array<{id: string, fullName: string}> }) {
+export function ConvertLeadButton({ leadId, mentors }: { leadId: string, mentors: Array<{ id: string, fullName: string }> }) {
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState(false);
     const [error, setError] = useState('');
@@ -19,12 +19,12 @@ export function ConvertLeadButton({ leadId, mentors }: { leadId: string, mentors
             setError('Selecione um mentor.');
             return;
         }
-        
+
         if (!confirm('Deseja converter este lead num aluno e alocar à mentoria?')) return;
-        
+
         setLoading(true);
         setError('');
-        
+
         try {
             const result = await convertLeadToAlunoAction(leadId, selectedMentor);
             if (result.success) {
@@ -54,7 +54,7 @@ export function ConvertLeadButton({ leadId, mentors }: { leadId: string, mentors
         return (
             <div className="flex flex-col items-end w-full max-w-sm mt-4 p-4 border border-slate-200 rounded-xl bg-white shadow-sm space-y-3">
                 <h4 className="text-sm font-medium text-slate-700 w-full">Vincule um Mentor</h4>
-                <select 
+                <select
                     value={selectedMentor}
                     onChange={(e) => setSelectedMentor(e.target.value)}
                     className="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
@@ -83,7 +83,7 @@ export function ConvertLeadButton({ leadId, mentors }: { leadId: string, mentors
             <button
                 disabled={loading}
                 onClick={() => setShowSelect(true)}
-                className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl font-medium transition-colors disabled:opacity-70"
+                className="w-full bg-[#13293d] hover:bg-[#f84f08] flex items-center gap-2 text-white px-5 py-2.5 rounded-xl font-medium transition-colors disabled:opacity-70"
             >
                 <UserPlus className="w-4 h-4" />
                 Tornar Aluno

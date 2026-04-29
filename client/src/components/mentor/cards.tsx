@@ -29,7 +29,7 @@ export default function MentorDashboard() {
             icon: FileWarning,
             iconColor: "text-amber-500",
             linkText: "Ir para Inbox",
-            linkUrl: "/mentor/revisoes"
+            linkUrl: "/mentor/comunicacao"
         },
         {
             title: "Sessões na Semana",
@@ -38,7 +38,7 @@ export default function MentorDashboard() {
             icon: Calendar,
             iconColor: "text-emerald-500",
             linkText: "Ver agenda",
-            linkUrl: "/mentor/sessoes"
+            linkUrl: "/mentor/turmas"
         }
     ];
 

@@ -37,7 +37,7 @@ export default async function MentorPage() {
                 <p className="text-slate-600">Bem-vindo ao painel de controle do Mentor.</p>
             </div>
             <MentorDashboard />
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <TableMentee data={alunos} />
                 <AvisosList avisos={avisos} />
             </div>

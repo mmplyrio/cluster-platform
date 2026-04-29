@@ -24,7 +24,7 @@ export function ComunicacaoOverview({ userRole }: ComunicacaoOverviewProps) {
     const isGestor = userRole === "MENTOR" || userRole === "ADMIN";
 
     return (
-        <div className="p-8 space-y-8 overflow-y-auto h-full">
+        <div className="p-4 md:p-8 space-y-6 md:space-y-8">
             {/* Boas-vindas Personalizado */}
             <div>
                 <h1 className="text-2xl font-bold text-slate-800">
@@ -38,7 +38,7 @@ export function ComunicacaoOverview({ userRole }: ComunicacaoOverviewProps) {
             </div>
 
             {/* GRID DE INDICADORES (STATS) - Adaptado por Role */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
                 <Card className="border-slate-200 shadow-sm hover:shadow-md transition-shadow">
                     <CardHeader className="flex flex-row items-center justify-between pb-2">
                         <CardTitle className="text-sm font-medium text-slate-500">
@@ -88,7 +88,7 @@ export function ComunicacaoOverview({ userRole }: ComunicacaoOverviewProps) {
             </div>
 
             {/* SEÇÃO DE CONTEÚDO RECENTE */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
 
                 {/* Lado Esquerdo: Últimas Mensagens (Comum a ambos) */}
                 <div className="space-y-4">
@@ -97,7 +97,9 @@ export function ComunicacaoOverview({ userRole }: ComunicacaoOverviewProps) {
                             <MessageSquare className="w-4 h-4 text-slate-400" /> Conversas Recentes
                         </h3>
                         <Button variant="ghost" size="sm" className="text-[#f84f08] text-xs font-bold" asChild>
-                            <Link href="/mentor/comunicacao/inbox">Abrir Inbox <ArrowRight className="w-3 h-3 ml-1" /></Link>
+                            <Link href={isGestor ? "/mentor/comunicacao/inbox" : "/mentee/comunicacao/inbox"}>
+                                Abrir Inbox <ArrowRight className="w-3 h-3 ml-1" />
+                            </Link>
                         </Button>
                     </div>
                     <div className="bg-white border border-slate-200 rounded-xl divide-y divide-slate-100">
@@ -120,7 +122,9 @@ export function ComunicacaoOverview({ userRole }: ComunicacaoOverviewProps) {
                             <Clock className="w-4 h-4 text-slate-400" /> Alertas do Radar
                         </h3>
                         <Button variant="ghost" size="sm" className="text-[#f84f08] text-xs font-bold" asChild>
-                            <Link href="/mentor/comunicacao/radar">Ver Radar <ArrowRight className="w-3 h-3 ml-1" /></Link>
+                            <Link href={isGestor ? "/mentor/comunicacao/radar" : "/mentee/comunicacao/radar"}>
+                                Ver Radar <ArrowRight className="w-3 h-3 ml-1" />
+                            </Link>
                         </Button>
                     </div>
                     <div className="bg-white border border-slate-200 rounded-xl p-4 space-y-4">
@@ -162,8 +166,8 @@ export function ComunicacaoOverview({ userRole }: ComunicacaoOverviewProps) {
                         </p>
                     </div>
                 </div>
-                <Button className="bg-[#f84f08] hover:bg-[#d94205] text-white font-bold" asChild>
-                    <Link href="/mentor/comunicacao/broadcast">
+                <Button className="bg-[#f84f08] hover:bg-[#d94205] text-white font-bold w-full md:w-auto" asChild>
+                    <Link href={isGestor ? "/mentor/comunicacao/broadcast" : "/mentee/comunicacao/broadcast"}>
                         {isGestor ? "Criar Novo Aviso" : "Ver Mural de Avisos"}
                     </Link>
                 </Button>
