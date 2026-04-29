@@ -19,6 +19,8 @@ CREATE TABLE IF NOT EXISTS "users" (
 	"last_login" timestamp,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"expires_at" timestamp,
+	"reset_password_token" text,
+	"reset_password_expires" timestamp,
 	CONSTRAINT "users_email_unique" UNIQUE("email")
 );
 
@@ -31,6 +33,8 @@ CREATE TABLE IF NOT EXISTS "companies" (
 	"mentor_id" uuid,
 	"lead_id" uuid,
 	"status_programa" text,
+	"cnpj" text,
+	"notes" text,
 	"created_at" timestamp DEFAULT now() NOT NULL
 );
 
@@ -181,3 +185,14 @@ EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
   ALTER TABLE "comments" ADD CONSTRAINT "comments_autor_id_users_id_fk" FOREIGN KEY ("autor_id") REFERENCES "users"("id") ON DELETE cascade;
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+-- Updates for Password Recovery
+DO $$ BEGIN
+  ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "reset_password_token" text;
+  ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "reset_password_expires" timestamp;
+EXCEPTION WHEN others THEN NULL; END $$;
+
+DO $$ BEGIN
+  ALTER TABLE "companies" ADD COLUMN IF NOT EXISTS "cnpj" text;
+  ALTER TABLE "companies" ADD COLUMN IF NOT EXISTS "notes" text;
+EXCEPTION WHEN others THEN NULL; END $$;

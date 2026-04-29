@@ -1,6 +1,7 @@
 import { db } from '../db';
-import { companies, journeys, funnelEvents, tasks, deliverables, users } from '../db/schema';
+import { companies, journeys, funnelEvents, tasks, deliverables, users, roles } from '../db/schema';
 import { eq, desc, and, isNull } from 'drizzle-orm';
+import { BrevoService } from './brevo.service';
 
 export class MentorService {
     static async getDashboard(mentorId: string) {
@@ -178,5 +179,52 @@ export class MentorService {
                 ultimaAtualizacao: "há 2 dias"
             }
         ];
+    }
+
+    static async createMentee(mentorId: string, data: any) {
+        // 1. Obter informações do mentor
+        const [mentor] = await db.select().from(users).where(eq(users.id, mentorId));
+        if (!mentor) throw new Error('mentor_not_found');
+
+        // 2. Garantir que o papel ALUNO exista
+        const [alunoRole] = await db.select().from(roles).where(eq(roles.name, 'ALUNO'));
+        if (!alunoRole) throw new Error('aluno_role_not_found');
+
+        // 3. Verificar se usuário já existe por email
+        let [user] = await db.select().from(users).where(eq(users.email, data.email));
+
+        if (!user) {
+            const [newUser] = await db.insert(users).values({
+                email: data.email,
+                fullName: data.nomeContato,
+                phone: data.whatsapp,
+                roleId: alunoRole.id,
+            }).returning();
+            user = newUser;
+        }
+
+        // 4. Criar a Empresa
+        const [newCompany] = await db.insert(companies).values({
+            nome: data.razaoSocial,
+            cnpj: data.cnpj || null,
+            segmento: data.ramo || null,
+            notes: data.anotacoes || null,
+            mentorId: mentorId,
+            statusPrograma: 'active'
+        }).returning();
+
+        // 5. Criar a Jornada Inicial
+        await db.insert(journeys).values({
+            companyId: newCompany.id,
+            etapaAtual: 'Diagnóstico',
+            progresso: 0,
+        });
+
+        // 6. Disparar e-mail de boas-vindas
+        BrevoService.enviarEmailBoasVindasMentorado(user.fullName, user.email, mentor.fullName).catch(err => {
+            console.error('Falha ao enviar boas-vindas mentorado:', err);
+        });
+
+        return { success: true, companyId: newCompany.id };
     }
 }

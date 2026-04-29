@@ -1,0 +1,38 @@
+'use server';
+
+import { cookies } from 'next/headers';
+
+function getApiUrl(): string {
+    const url = process.env.INTERNAL_API_URL;
+    return url || 'http://localhost:4000/api';
+}
+
+async function getAuthHeaders() {
+    const session = (await cookies()).get('session')?.value;
+    return {
+        'Content-Type': 'application/json',
+        ...(session ? { 'Authorization': `Bearer ${session}` } : {})
+    };
+}
+
+export async function createMenteeAction(data: any) {
+    const API_URL = getApiUrl();
+    try {
+        const headers = await getAuthHeaders();
+        const res = await fetch(`${API_URL}/mentor/alunos`, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify(data)
+        });
+
+        if (!res.ok) {
+            const error = await res.json();
+            return { success: false, error: error.error || 'Falha ao cadastrar aluno' };
+        }
+
+        return await res.json();
+    } catch (error) {
+        console.error('Erro ao cadastrar aluno:', error);
+        return { success: false, error: 'Erro de comunicação com o servidor' };
+    }
+}

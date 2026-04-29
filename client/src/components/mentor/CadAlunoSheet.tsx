@@ -22,14 +22,48 @@ import {
     SelectValue
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { createMenteeAction } from "@/actions/mentor";
+import { Loader2 } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 export function CadAlunoSheet() {
     const [open, setOpen] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState("");
+    const [ramo, setRamo] = useState("");
+    const [origem, setOrigem] = useState("");
+    const router = useRouter();
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        console.log("Cadastrando nova empresa/aluno no banco global...");
-        setOpen(false);
+        setIsLoading(true);
+        setError("");
+
+        const formData = new FormData(e.currentTarget);
+        const data = {
+            razaoSocial: formData.get("razaoSocial"),
+            cnpj: formData.get("cnpj"),
+            ramo: ramo,
+            nomeContato: formData.get("nomeContato"),
+            email: formData.get("email"),
+            whatsapp: formData.get("whatsapp"),
+            origem: origem,
+            anotacoes: formData.get("anotacoes"),
+        };
+
+        try {
+            const res = await createMenteeAction(data);
+            if (res.success) {
+                setOpen(false);
+                router.refresh();
+            } else {
+                setError(res.error || "Erro ao salvar cadastro.");
+            }
+        } catch (err) {
+            setError("Falha na comunicação com o servidor.");
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
@@ -60,17 +94,17 @@ export function CadAlunoSheet() {
 
                         <div className="space-y-2">
                             <Label htmlFor="razaoSocial">Razão Social / Nome Fantasia</Label>
-                            <Input id="razaoSocial" placeholder="Ex: Tech Solutions Ltda" required />
+                            <Input id="razaoSocial" name="razaoSocial" placeholder="Ex: Tech Solutions Ltda" required />
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <Label htmlFor="cnpj">CNPJ</Label>
-                                <Input id="cnpj" placeholder="00.000.000/0001-00" />
+                                <Input id="cnpj" name="cnpj" placeholder="00.000.000/0001-00" />
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="ramo">Ramo de Atuação</Label>
-                                <Select>
+                                <Select value={ramo} onValueChange={setRamo}>
                                     <SelectTrigger>
                                         <SelectValue placeholder="Selecione..." />
                                     </SelectTrigger>
@@ -94,17 +128,17 @@ export function CadAlunoSheet() {
 
                         <div className="space-y-2">
                             <Label htmlFor="nomeContato">Nome Completo</Label>
-                            <Input id="nomeContato" placeholder="Ex: João Paulo Silva" required />
+                            <Input id="nomeContato" name="nomeContato" placeholder="Ex: João Paulo Silva" required />
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <Label htmlFor="email">E-mail de Acesso</Label>
-                                <Input id="email" type="email" placeholder="joao@empresa.com" required />
+                                <Input id="email" name="email" type="email" placeholder="joao@empresa.com" required />
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="whatsapp">WhatsApp</Label>
-                                <Input id="whatsapp" placeholder="(00) 90000-0000" required />
+                                <Input id="whatsapp" name="whatsapp" placeholder="(00) 90000-0000" required />
                             </div>
                         </div>
                     </div>
@@ -117,7 +151,7 @@ export function CadAlunoSheet() {
 
                         <div className="space-y-2">
                             <Label htmlFor="origem">Origem do Lead (Opcional)</Label>
-                            <Select>
+                            <Select value={origem} onValueChange={setOrigem}>
                                 <SelectTrigger>
                                     <SelectValue placeholder="Como nos conheceu?" />
                                 </SelectTrigger>
@@ -134,18 +168,24 @@ export function CadAlunoSheet() {
                             <Label htmlFor="anotacoes">Anotações do Diagnóstico Prévio</Label>
                             <Textarea
                                 id="anotacoes"
+                                name="anotacoes"
                                 placeholder="Descreva os principais desafios que a empresa relatou antes de fechar o contrato..."
                                 className="resize-none h-24"
                             />
                         </div>
                     </div>
 
+                    {error && (
+                        <p className="text-sm text-red-600 bg-red-50 p-3 rounded-md border border-red-100">{error}</p>
+                    )}
+
                     {/* RODAPÉ */}
                     <SheetFooter className="pt-6 border-t border-slate-100 mt-8">
                         <Button variant="ghost" type="button" onClick={() => setOpen(false)}>
                             Cancelar
                         </Button>
-                        <Button type="submit" className="bg-[#f84f08] hover:bg-[#d94205]">
+                        <Button type="submit" className="bg-[#f84f08] hover:bg-[#d94205]" disabled={isLoading}>
+                            {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                             Salvar Cadastro
                         </Button>
                     </SheetFooter>

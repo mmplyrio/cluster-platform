@@ -1,39 +1,35 @@
 import { GalleryVerticalEnd } from "lucide-react"
+import Link from "next/link"
 
-import { LoginForm } from "@/components/login-form"
-import type { Metadata } from 'next'
-
-export const metadata: Metadata = {
-    title: 'Cluster | Inovação e Tecnologia',
-    description: 'Cluster | Inovação e Tecnologia',
-    icons: {
-        icon: '/logomarca.svg', // Opcional se você já colocou na raiz
-    },
-}
-export default function LoginPage() {
+export default function AuthLayout({
+    children,
+}: {
+    children: React.ReactNode
+}) {
     return (
         <div className="grid min-h-svh lg:grid-cols-2">
             <div className="flex flex-col gap-4 p-6 md:p-10">
                 <div className="flex justify-center gap-2 md:justify-start">
-                    <a href="/" className="flex items-center gap-2 font-medium">
+                    <Link href="/" className="flex items-center gap-2 font-medium">
                         <div className="flex size-6 items-center justify-center rounded-md bg-primary text-primary-foreground">
                             <GalleryVerticalEnd className="size-4" />
                         </div>
                         Cluster.
-                    </a>
+                    </Link>
                 </div>
                 <div className="flex flex-1 items-center justify-center">
                     <div className="w-full max-w-xs">
-                        <LoginForm />
+                        {children}
                     </div>
                 </div>
             </div>
-            <div className="relative hidden bg-muted lg:flex lg:items-center lg:justify-center">
+            <div className="relative hidden bg-[#f5f5f5] lg:flex lg:items-center lg:justify-center">
                 <img
                     src="/logo.svg"
-                    alt="Image"
-                    className="max-h-[80%] max-w-[80%] object-contain dark:brightness-[0.2] dark:grayscale"
+                    alt="Logo"
+                    className="max-h-[80%] max-w-[80%] object-contain brightness-0 invert"
                 />
+                <div className="absolute inset-0 bg-gradient-to-br from-[#13293d]/50 to-transparent pointer-events-none" />
             </div>
         </div>
     )
