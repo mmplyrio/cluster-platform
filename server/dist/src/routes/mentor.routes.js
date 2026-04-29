@@ -7,6 +7,7 @@ const router = (0, express_1.Router)();
 router.use(auth_middleware_1.authMiddleware);
 router.get('/dashboard', (0, auth_middleware_1.requireRole)(['MENTOR']), mentor_controller_1.MentorController.getDashboard);
 router.get('/alunos', (0, auth_middleware_1.requireRole)(['MENTOR']), mentor_controller_1.MentorController.getAlunosList);
+router.post('/alunos', (0, auth_middleware_1.requireRole)(['MENTOR']), mentor_controller_1.MentorController.createMentee);
 router.get('/turmas', (0, auth_middleware_1.requireRole)(['MENTOR']), mentor_controller_1.MentorController.getTurmas);
 router.get('/builder', (0, auth_middleware_1.requireRole)(['MENTOR']), mentor_controller_1.MentorController.getBuilder);
 exports.default = router;

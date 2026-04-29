@@ -9,6 +9,9 @@ const schema_1 = require("../db/schema");
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const drizzle_orm_1 = require("drizzle-orm");
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
+const crypto_1 = __importDefault(require("crypto"));
+const brevo_service_1 = require("./brevo.service");
+const drizzle_orm_2 = require("drizzle-orm");
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret_key_change_in_production';
 class AuthService {
     static async setup() {
@@ -88,6 +91,68 @@ class AuthService {
         await db_1.db.update(schema_1.users).set({ lastLogin: new Date() }).where((0, drizzle_orm_1.eq)(schema_1.users.id, user.id));
         const token = jsonwebtoken_1.default.sign({ userId: user.id, email: user.email, role: user.roleName }, JWT_SECRET, { expiresIn: '24h' });
         return { token, user: { id: user.id, email: user.email, fullName: user.fullName, role: user.roleName } };
+    }
+    static async getMe(userId) {
+        const [user] = await db_1.db.select({
+            id: schema_1.users.id,
+            email: schema_1.users.email,
+            fullName: schema_1.users.fullName,
+            roleName: schema_1.roles.name
+        }).from(schema_1.users)
+            .leftJoin(schema_1.roles, (0, drizzle_orm_1.eq)(schema_1.users.roleId, schema_1.roles.id))
+            .where((0, drizzle_orm_1.eq)(schema_1.users.id, userId));
+        if (!user)
+            throw new Error('user_not_found');
+        return {
+            id: user.id,
+            name: user.fullName,
+            email: user.email,
+            role: user.roleName,
+            avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(user.fullName)}&background=random` // Provide a nice fallback avatar based on name
+        };
+    }
+    static async updateMe(userId, data) {
+        const updateData = {};
+        if (data.fullName)
+            updateData.fullName = data.fullName;
+        if (data.email)
+            updateData.email = data.email;
+        if (data.password) {
+            updateData.passwordHash = await bcryptjs_1.default.hash(data.password, 10);
+        }
+        if (Object.keys(updateData).length === 0)
+            return { success: true };
+        await db_1.db.update(schema_1.users).set(updateData).where((0, drizzle_orm_1.eq)(schema_1.users.id, userId));
+        return { success: true };
+    }
+    static async forgotPassword(email) {
+        const [user] = await db_1.db.select().from(schema_1.users).where((0, drizzle_orm_1.eq)(schema_1.users.email, email));
+        if (!user)
+            throw new Error('user_not_found');
+        const token = crypto_1.default.randomBytes(32).toString('hex');
+        const hashedToken = crypto_1.default.createHash('sha256').update(token).digest('hex');
+        const expires = new Date(Date.now() + 3600000); // 1 hour
+        await db_1.db.update(schema_1.users).set({
+            resetPasswordToken: hashedToken,
+            resetPasswordExpires: expires
+        }).where((0, drizzle_orm_1.eq)(schema_1.users.id, user.id));
+        const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
+        await brevo_service_1.BrevoService.enviarEmailRecuperacaoSenha(user.fullName, user.email, resetLink);
+        return { success: true };
+    }
+    static async resetPassword(token, password) {
+        const hashedToken = crypto_1.default.createHash('sha256').update(token).digest('hex');
+        const [user] = await db_1.db.select().from(schema_1.users).where((0, drizzle_orm_2.and)((0, drizzle_orm_1.eq)(schema_1.users.resetPasswordToken, hashedToken), (0, drizzle_orm_2.gt)(schema_1.users.resetPasswordExpires, new Date())));
+        if (!user)
+            throw new Error('invalid_or_expired_token');
+        const hash = await bcryptjs_1.default.hash(password, 10);
+        await db_1.db.update(schema_1.users).set({
+            passwordHash: hash,
+            resetPasswordToken: null,
+            resetPasswordExpires: null,
+            lastLogin: user.lastLogin || new Date() // If first access, mark as logged in
+        }).where((0, drizzle_orm_1.eq)(schema_1.users.id, user.id));
+        return { success: true };
     }
 }
 exports.AuthService = AuthService;

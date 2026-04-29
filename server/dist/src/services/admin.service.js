@@ -4,6 +4,7 @@ exports.AdminService = void 0;
 const db_1 = require("../db");
 const schema_1 = require("../db/schema");
 const drizzle_orm_1 = require("drizzle-orm");
+const brevo_service_1 = require("./brevo.service");
 const SCORING = {
     q1: { A: 2, B: 4, C: 1, D: 2 },
     q2: { A: 2, B: 1, C: 4, D: 2 },
@@ -157,6 +158,10 @@ class AdminService {
             fullName,
             roleId: roleObj.id,
         }).returning();
+        // Envia e-mail de boas-vindas em background
+        brevo_service_1.BrevoService.enviarEmailBoasVindasEquipe(fullName, email).catch(err => {
+            console.error('Falha ao enviar e-mail de boas-vindas para equipe:', err);
+        });
         return newUser;
     }
     static async transformLeadToAluno(leadId, mentorId) {

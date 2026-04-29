@@ -113,5 +113,211 @@ class BrevoService {
             console.error("Falha ao comunicar com a api do Brevo", err);
         }
     }
+    static async enviarEmailBoasVindasEquipe(nome, email) {
+        const frontendUrl = (process.env.FRONTEND_URL || "http://localhost:3000").split(',')[0].trim();
+        const brevoPayload = {
+            sender: {
+                name: process.env.BREVO_SENDER_NAME || "Equipe Cluster",
+                email: process.env.BREVO_SENDER_EMAIL,
+            },
+            to: [{ name: nome, email: email }],
+            subject: "Bem-vindo à Equipe Cluster! 🚀",
+            htmlContent: `
+                <!DOCTYPE html>
+                <html lang="pt-BR">
+                <head>
+                    <meta charset="UTF-8">
+                </head>
+                <body style="background-color: #f8fafc; margin: 0; padding: 40px 20px;">
+                    <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                        <div style="text-align: center; margin-bottom: 30px;">
+                            <a href="https://www.clustersolucoes.com/">
+                                <img src="https://www.clustersolucoes.com/logo.svg" alt="Logo Cluster" width="200" height="100">
+                            </a>
+                        </div>
+
+                        <div style="background-color: #ffffff; padding: 40px; border-radius: 16px; box-shadow: 0 4px 24px rgba(0,0,0,0.04); text-align: center; border: 1px solid #f1f5f9;">
+                            <h2 style="color: #13293d; font-size: 24px; margin-top: 0; font-weight: 800;">Parabéns, ${nome}!</h2>
+                            <p style="color: #475569; font-size: 16px; line-height: 1.6; margin-bottom: 24px;">
+                                Sua conta de acesso à plataforma Cluster foi criada. Agora você faz parte do nosso time de especialistas.
+                            </p>
+                            
+                            <p style="color: #475569; font-size: 15px; margin-bottom: 30px;">
+                                Para começar, acesse a plataforma e utilize seu e-mail institucional. No seu primeiro acesso, o sistema solicitará que você cadastre sua senha pessoal.
+                            </p>
+
+                            <div style="margin-top: 20px; margin-bottom: 30px;">
+                                <a href="${frontendUrl}/login" style="background-color: #13293d; color: #ffffff; padding: 18px 24px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: bold; font-size: 15px; box-shadow: 0 4px 6px rgba(19, 41, 61, 0.2);">
+                                    Acessar Plataforma
+                                </a>
+                            </div>
+
+                            <p style="color: #94a3b8; font-size: 14px;">
+                                Se tiver qualquer dúvida, entre em contato com o suporte interno.
+                            </p>
+                        </div>
+
+                        <div style="text-align: center; margin-top: 40px;">
+                            <p style="color: #cbd5e1; font-size: 12px; margin: 0;">
+                                © ${new Date().getFullYear()} Cluster Soluções Empresariais. Todos os direitos reservados.
+                            </p>
+                        </div>
+                    </div>
+                </body>
+                </html>
+            `,
+        };
+        try {
+            await fetch("https://api.brevo.com/v3/smtp/email", {
+                method: "POST",
+                headers: {
+                    "Accept": "application/json",
+                    "Content-Type": "application/json",
+                    "api-key": process.env.BREVO_API_KEY,
+                },
+                body: JSON.stringify(brevoPayload),
+            });
+        }
+        catch (err) {
+            console.error("Erro ao enviar boas-vindas equipe:", err);
+        }
+    }
+    static async enviarEmailBoasVindasMentorado(nome, email, mentorNome) {
+        const frontendUrl = (process.env.FRONTEND_URL || "http://localhost:3000").split(',')[0].trim();
+        const brevoPayload = {
+            sender: {
+                name: process.env.BREVO_SENDER_NAME || "Equipe Cluster",
+                email: process.env.BREVO_SENDER_EMAIL,
+            },
+            to: [{ name: nome, email: email }],
+            subject: "Bem-vindo à sua Mentoria Cluster! 🎓",
+            htmlContent: `
+                <!DOCTYPE html>
+                <html lang="pt-BR">
+                <head>
+                    <meta charset="UTF-8">
+                </head>
+                <body style="background-color: #f8fafc; margin: 0; padding: 40px 20px;">
+                    <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                        <div style="text-align: center; margin-bottom: 30px;">
+                            <a href="https://www.clustersolucoes.com/">
+                                <img src="https://www.clustersolucoes.com/logo.svg" alt="Logo Cluster" width="200" height="100">
+                            </a>
+                        </div>
+
+                        <div style="background-color: #ffffff; padding: 40px; border-radius: 16px; box-shadow: 0 4px 24px rgba(0,0,0,0.04); text-align: center; border: 1px solid #f1f5f9;">
+                            <h2 style="color: #13293d; font-size: 24px; margin-top: 0; font-weight: 800;">Olá, ${nome}!</h2>
+                            <p style="color: #475569; font-size: 16px; line-height: 1.6; margin-bottom: 24px;">
+                                É um prazer ter você conosco! Sua jornada de mentoria com <strong>${mentorNome}</strong> está prestes a começar.
+                            </p>
+                            
+                            <p style="color: #475569; font-size: 15px; margin-bottom: 30px;">
+                                Já criamos o seu acesso à nossa plataforma exclusiva, onde você poderá acompanhar seu plano de ação, tarefas e indicadores.
+                            </p>
+
+                            <div style="margin-top: 20px; margin-bottom: 30px;">
+                                <a href="${frontendUrl}/login" style="background-color: #f84f08; color: #ffffff; padding: 18px 24px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: bold; font-size: 15px; box-shadow: 0 4px 6px rgba(248, 79, 8, 0.2);">
+                                    Definir Minha Senha e Acessar
+                                </a>
+                            </div>
+
+                            <p style="color: #94a3b8; font-size: 14px;">
+                                No seu primeiro acesso, o sistema solicitará que você cadastre sua senha de segurança.
+                            </p>
+                        </div>
+
+                        <div style="text-align: center; margin-top: 40px;">
+                            <p style="color: #cbd5e1; font-size: 12px; margin: 0;">
+                                © ${new Date().getFullYear()} Cluster Soluções Empresariais. Todos os direitos reservados.
+                            </p>
+                        </div>
+                    </div>
+                </body>
+                </html>
+            `,
+        };
+        try {
+            await fetch("https://api.brevo.com/v3/smtp/email", {
+                method: "POST",
+                headers: {
+                    "Accept": "application/json",
+                    "Content-Type": "application/json",
+                    "api-key": process.env.BREVO_API_KEY,
+                },
+                body: JSON.stringify(brevoPayload),
+            });
+        }
+        catch (err) {
+            console.error("Erro ao enviar boas-vindas mentorado:", err);
+        }
+    }
+    static async enviarEmailRecuperacaoSenha(nome, email, linkRecuperacao) {
+        const brevoPayload = {
+            sender: {
+                name: process.env.BREVO_SENDER_NAME || "Equipe Cluster",
+                email: process.env.BREVO_SENDER_EMAIL,
+            },
+            to: [{ name: nome, email: email }],
+            subject: "Recuperação de Senha - Cluster 🔐",
+            htmlContent: `
+                <!DOCTYPE html>
+                <html lang="pt-BR">
+                <head>
+                    <meta charset="UTF-8">
+                </head>
+                <body style="background-color: #f8fafc; margin: 0; padding: 40px 20px;">
+                    <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                        <div style="text-align: center; margin-bottom: 30px;">
+                            <a href="https://www.clustersolucoes.com/">
+                                <img src="https://www.clustersolucoes.com/logo.svg" alt="Logo Cluster" width="200" height="100">
+                            </a>
+                        </div>
+
+                        <div style="background-color: #ffffff; padding: 40px; border-radius: 16px; box-shadow: 0 4px 24px rgba(0,0,0,0.04); text-align: center; border: 1px solid #f1f5f9;">
+                            <h2 style="color: #13293d; font-size: 24px; margin-top: 0; font-weight: 800;">Olá, ${nome}!</h2>
+                            <p style="color: #475569; font-size: 16px; line-height: 1.6; margin-bottom: 24px;">
+                                Recebemos uma solicitação para redefinir a senha da sua conta no ecossistema Cluster.
+                            </p>
+                            
+                            <div style="margin-top: 20px; margin-bottom: 30px;">
+                                <a href="${linkRecuperacao}" style="background-color: #f84f08; color: #ffffff; padding: 18px 24px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: bold; font-size: 15px; box-shadow: 0 4px 6px rgba(248, 79, 8, 0.2);">
+                                    Redefinir Minha Senha
+                                </a>
+                            </div>
+
+                            <p style="color: #94a3b8; font-size: 14px; line-height: 1.6;">
+                                Se você não solicitou esta alteração, por favor ignore este e-mail. Este link expirará em 1 hora.
+                            </p>
+                        </div>
+
+                        <div style="text-align: center; margin-top: 40px;">
+                            <p style="color: #cbd5e1; font-size: 12px; margin: 0;">
+                                © ${new Date().getFullYear()} Cluster Soluções Empresariais. Todos os direitos reservados.
+                            </p>
+                        </div>
+                    </div>
+                </body>
+                </html>
+            `,
+        };
+        try {
+            const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+                method: "POST",
+                headers: {
+                    "Accept": "application/json",
+                    "Content-Type": "application/json",
+                    "api-key": process.env.BREVO_API_KEY,
+                },
+                body: JSON.stringify(brevoPayload),
+            });
+            if (!response.ok) {
+                const errorData = await response.json();
+                console.error("Erro no envio pelo Brevo (Recuperação):", errorData);
+            }
+        }
+        catch (err) {
+            console.error("Falha ao comunicar com a api do Brevo", err);
+        }
+    }
 }
 exports.BrevoService = BrevoService;

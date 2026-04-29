@@ -7,17 +7,22 @@ exports.requireRole = exports.authMiddleware = void 0;
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret_key_change_in_production';
 const authMiddleware = (req, res, next) => {
-    const token = req.headers.authorization?.split(' ')[1];
+    const authHeader = req.headers.authorization;
+    const token = authHeader?.split(' ')[1];
+    console.log(`[authMiddleware] Request Path: ${req.path}, Has Token: ${!!token}`);
     if (!token) {
+        console.warn('[authMiddleware] Token não fornecido');
         res.status(401).json({ success: false, error: 'Token não fornecido' });
         return;
     }
     try {
         const decoded = jsonwebtoken_1.default.verify(token, JWT_SECRET);
+        console.log(`[authMiddleware] Token verificado para: ${decoded.email}`);
         req.user = decoded;
         next();
     }
     catch (error) {
+        console.error('[authMiddleware] Erro ao verificar token:', error instanceof Error ? error.message : error);
         res.status(403).json({ success: false, error: 'Token inválido' });
         return;
     }
