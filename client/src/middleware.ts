@@ -7,6 +7,7 @@ export async function middleware(request: NextRequest) {
     const pathname = request.nextUrl.pathname;
 
     const isAuthPage = pathname.startsWith('/login');
+    const isExpired = request.nextUrl.searchParams.has('error');
     const isAdminPage = pathname.startsWith('/admin');
     const isDashboardPage = pathname.startsWith('/dashboard');
     const isMentorPage = pathname.startsWith('/mentor');
@@ -34,7 +35,8 @@ export async function middleware(request: NextRequest) {
         console.log(`[Middleware] Usuário: ${payload.email}, Role: ${r}, Path: ${pathname}`);
 
         // Se usuário que já tá logado tenta acessar a tela de login
-        if (isAuthPage) {
+        // Mas se tiver o parâmetro error=session_expired, deixamos ele no login para renovar a sessão
+        if (isAuthPage && !isExpired) {
             let redirectPath = '/';
             if (r === 'ADMIN' || r === 'COMERCIAL' || r === 'MASTER') redirectPath = '/admin/leads';
             else if (r === 'MENTOR') redirectPath = '/mentor';
