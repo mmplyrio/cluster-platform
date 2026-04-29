@@ -36,8 +36,7 @@ export default async function DashboardLayout({
   const user = await getUserProfile();
   
   if (!user) {
-    (await cookies()).delete('session');
-    redirect('/login');
+    redirect('/login?error=session_expired');
   }
 
   return (

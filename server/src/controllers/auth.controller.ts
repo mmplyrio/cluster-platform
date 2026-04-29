@@ -68,7 +68,7 @@ export class AuthController {
             const data = await AuthService.getMe(userId);
             res.json({ success: true, data });
         } catch (error: any) {
-            res.status(404).json({ success: false, error: error.message });
+            res.status(401).json({ success: false, error: error.message });
         }
     }
 
