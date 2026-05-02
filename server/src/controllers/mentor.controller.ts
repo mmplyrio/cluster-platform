@@ -43,6 +43,29 @@ export class MentorController {
         }
     }
 
+    static async getTemplate(req: AuthRequest, res: Response) {
+        try {
+            const mentorId = req.user!.userId;
+            const { id } = req.params;
+            const data = await MentorService.getMentorshipTemplate(id as string, mentorId);
+            if (!data) return res.status(404).json({ success: false, error: 'template_not_found' });
+            res.json({ success: true, data });
+        } catch (error: any) {
+            res.status(500).json({ success: false, error: error.message });
+        }
+    }
+
+    static async updateTemplate(req: AuthRequest, res: Response) {
+        try {
+            const mentorId = req.user!.userId;
+            const { id } = req.params;
+            const data = await MentorService.updateMentorshipTemplate(id as string, mentorId, req.body);
+            res.json({ success: true, data });
+        } catch (error: any) {
+            res.status(500).json({ success: false, error: error.message });
+        }
+    }
+
     static async getTurmaDetails(req: AuthRequest, res: Response) {
         try {
             const mentorId = req.user!.userId;

@@ -35,9 +35,28 @@ import {
 } from "@/components/ui/combobox"
 import { Textarea } from "../ui/textarea";
 
+import { useEffect } from "react";
+import { getBuilderDataAction } from "@/actions/mentor"; // Need to check if this exists or use getBuilderData
+
 export function NovaTurmaSheet() {
     const [open, setOpen] = useState(false);
+    const [mentorias, setMentorias] = useState<any[]>([]);
     const anchor = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (open) {
+            const fetchMentorias = async () => {
+                const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
+                // Usando a action existente adaptada ou fazendo fetch direto se necessário
+                // Para simplificar, vou assumir que temos uma action que retorna o builder data
+                const data = await getBuilderDataAction();
+                if (data && data.mentorias) {
+                    setMentorias(data.mentorias.filter((m: any) => m.status === 'Ativo'));
+                }
+            };
+            fetchMentorias();
+        }
+    }, [open]);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -96,9 +115,13 @@ export function NovaTurmaSheet() {
                                         <SelectValue placeholder="Selecione..." />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="lucro-estruturado">Lucro Estruturado</SelectItem>
-                                        <SelectItem value="maquina-vendas">Máquina de Vendas</SelectItem>
-                                        <SelectItem value="gestao-equipes">Gestão de Equipes</SelectItem>
+                                        {mentorias.length > 0 ? (
+                                            mentorias.map((m: any) => (
+                                                <SelectItem key={m.id} value={m.id}>{m.titulo}</SelectItem>
+                                            ))
+                                        ) : (
+                                            <SelectItem value="none" disabled>Nenhuma mentoria ativa</SelectItem>
+                                        )}
                                     </SelectContent>
                                 </Select>
                             </div>

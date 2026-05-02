@@ -7,9 +7,20 @@ import { Textarea } from "@/components/ui/textarea";
 interface GeneralInfoBuilderProps {
     titulo: string;
     setTitulo: (titulo: string) => void;
+    descricao?: string;
+    setDescricao?: (v: string) => void;
+    preco?: string;
+    setPreco?: (v: string) => void;
 }
 
-export function GeneralInfoBuilder({ titulo, setTitulo }: GeneralInfoBuilderProps) {
+export function GeneralInfoBuilder({ 
+    titulo, 
+    setTitulo,
+    descricao = "",
+    setDescricao,
+    preco = "",
+    setPreco
+}: GeneralInfoBuilderProps) {
     return (
         <div className="bg-white border border-slate-200 rounded-xl p-8 shadow-sm space-y-8 animate-in fade-in slide-in-from-bottom-4">
             <div>
@@ -33,6 +44,8 @@ export function GeneralInfoBuilder({ titulo, setTitulo }: GeneralInfoBuilderProp
                 <div className="space-y-2">
                     <Label className="text-slate-700 font-bold">Promessa / Objetivo Principal</Label>
                     <Textarea
+                        value={descricao}
+                        onChange={(e) => setDescricao?.(e.target.value)}
                         placeholder="Qual é a transformação que esta mentoria entrega? Ex: Estruturar o fluxo de caixa para obter previsibilidade financeira em 90 dias."
                         className="resize-none h-24 text-base bg-white"
                     />
@@ -50,9 +63,15 @@ export function GeneralInfoBuilder({ titulo, setTitulo }: GeneralInfoBuilderProp
                         <span className="text-[10px] text-slate-400">Tempo de acesso ao programa</span>
                     </div>
                     <div className="space-y-2">
-                        <Label className="text-slate-700 font-bold">Ticket Base</Label>
-                        <Input type="text" placeholder="R$ 15.000,00" className="h-10 bg-white" />
-                        <span className="text-[10px] text-slate-400">Apenas para referência interna</span>
+                        <Label className="text-slate-700 font-bold">Ticket Base (R$)</Label>
+                        <Input 
+                            type="number" 
+                            value={preco}
+                            onChange={(e) => setPreco?.(e.target.value)}
+                            placeholder="15000" 
+                            className="h-10 bg-white" 
+                        />
+                        <span className="text-[10px] text-slate-400">Apenas números. Ex: 15000</span>
                     </div>
                 </div>
             </div>
