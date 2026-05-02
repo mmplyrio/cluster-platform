@@ -2,9 +2,12 @@ import Link from "next/link";
 import { ArrowLeft, Users, CheckCircle, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { StatCard } from "@/components/mentor/StatCard";
-import { TableMentee, Mentee } from "@/components/mentor/TableMentee"; // Reutilizando nosso componente!
+import { TableMentee } from "@/components/mentor/TableMentee";
 import { AdicionarAlunoSheet } from "@/components/mentor/NovoAlunoSheet";
 import { NovoAvisoSheet } from "@/components/mentor/NovoAvisoSheet";
+import { getTurmaDetailsAction } from "@/actions/mentor";
+import { notFound } from "next/navigation";
+
 // 1. Tipagem para receber o ID dinâmico da URL
 interface TurmaDetalheProps {
     params: {
@@ -12,19 +15,16 @@ interface TurmaDetalheProps {
     };
 }
 
-export default function TurmaDetalhePage({ params }: TurmaDetalheProps) {
+export default async function TurmaDetalhePage({ params }: TurmaDetalheProps) {
     // 2. Extraímos o ID que veio na URL
-    const { turmaId } = params;
+    const { turmaId } = await params;
+    
+    // Buscar dados reais do backend
+    const data = await getTurmaDetailsAction(turmaId);
 
-    // No futuro: const turma = await db.query.turmas.findFirst({ where: { id: turmaId } })
-    // Por enquanto, simulamos os dados baseados no ID
-    const nomeDaTurma = turmaId === 'agosto-2026' ? 'Turma Agosto 2026' : `Turma ${turmaId}`;
-
-    // Simulando os alunos desta turma específica
-    const alunosDestaTurma: Mentee[] = [
-        { id: "A01", nome: "Empresa XPTO Ltda", turma: nomeDaTurma, status: "Ativo" },
-        { id: "A02", nome: "Comercial Silva", turma: nomeDaTurma, status: "Pausado" },
-    ];
+    if (!data) {
+        notFound();
+    }
 
     return (
         <div className="space-y-6">
@@ -37,12 +37,12 @@ export default function TurmaDetalhePage({ params }: TurmaDetalheProps) {
                         </Link>
                     </Button>
                     <div className="flex items-center gap-3">
-                        <h1 className="text-2xl font-bold text-slate-800">{nomeDaTurma}</h1>
+                        <h1 className="text-2xl font-bold text-slate-800">{data.nome}</h1>
                         <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">
-                            Em Andamento
+                            {data.status}
                         </span>
                     </div>
-                    <p className="text-slate-500 mt-1">Mentoria: Lucro Estruturado</p>
+                    <p className="text-slate-500 mt-1">Mentoria: {data.mentoria}</p>
                 </div>
 
                 <div className="flex gap-2">
@@ -51,35 +51,30 @@ export default function TurmaDetalhePage({ params }: TurmaDetalheProps) {
                 </div>
             </div>
 
-            {/* MÉTRICAS ESPECÍFICAS DA TURMA (Reutilizando o StatCard!) */}
+            {/* MÉTRICAS ESPECÍFICAS DA TURMA */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <StatCard
-                    title="Alunos Matriculados"
-                    value="15"
-                    description="2 vagas restantes"
-                    icon={Users}
-                />
-                <StatCard
-                    title="Progresso Médio"
-                    value="45%"
-                    description="Módulo 3: Prever"
-                    icon={CheckCircle}
-                    iconColor="text-emerald-500"
-                />
-                <StatCard
-                    title="Próxima Sessão"
-                    value="18/Ago"
-                    description="Revisão de Fluxo de Caixa"
-                    icon={Clock}
-                    iconColor="text-[#f84f08]"
-                />
+                {data.metricas.map((stat: any) => {
+                    const isProgress = stat.title.includes('Progresso');
+                    const isSession = stat.title.includes('Sessão');
+                    const isStudents = stat.title.includes('Alunos');
+                    
+                    return (
+                        <StatCard
+                            key={stat.title}
+                            title={stat.title}
+                            value={stat.value}
+                            description={stat.description}
+                            icon={isStudents ? Users : (isProgress ? CheckCircle : Clock)}
+                            iconColor={isProgress ? "text-emerald-500" : (isSession ? "text-[#f84f08]" : "text-slate-400")}
+                        />
+                    );
+                })}
             </div>
 
-            {/* TABELA DE ALUNOS (Reutilizando a TableMentee!) */}
+            {/* TABELA DE ALUNOS */}
             <div className="mt-8">
                 <h2 className="text-lg font-semibold text-slate-800 mb-4">Empresas Participantes</h2>
-                {/* Lembra que fizemos esse componente ser 'burro'? Agora ele brilha! */}
-                <TableMentee data={alunosDestaTurma} />
+                <TableMentee data={data.alunos} />
             </div>
         </div>
     );

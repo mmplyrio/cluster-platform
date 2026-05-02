@@ -43,6 +43,17 @@ export class MentorController {
         }
     }
 
+    static async getTurmaDetails(req: AuthRequest, res: Response) {
+        try {
+            const mentorId = req.user!.userId;
+            const { id } = req.params;
+            const data = await MentorService.getTurmaDetails(mentorId, id as string);
+            res.json({ success: true, data });
+        } catch (error: any) {
+            res.status(500).json({ success: false, error: error.message });
+        }
+    }
+
     static async createMentee(req: AuthRequest, res: Response) {
         try {
             const mentorId = req.user!.userId;

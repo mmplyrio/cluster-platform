@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import {
     MessageSquare,
     Megaphone,
@@ -12,7 +13,7 @@ import {
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { getChatOverviewAction, getConversationsAction } from "@/actions/chat";
 
 export type UserRole = "MENTOR" | "ALUNO" | "ADMIN";
 
@@ -22,6 +23,35 @@ interface ComunicacaoOverviewProps {
 
 export function ComunicacaoOverview({ userRole }: ComunicacaoOverviewProps) {
     const isGestor = userRole === "MENTOR" || userRole === "ADMIN";
+    const [overview, setOverview] = useState<any>(null);
+    const [recentConvs, setRecentConvs] = useState<any[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        const loadData = async () => {
+            try {
+                const [ov, convs] = await Promise.all([
+                    getChatOverviewAction(),
+                    getConversationsAction()
+                ]);
+                setOverview(ov);
+                setRecentConvs(convs.slice(0, 3));
+            } catch (error) {
+                console.error("Erro ao carregar overview:", error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        loadData();
+    }, []);
+
+    if (isLoading) {
+        return (
+            <div className="flex flex-1 items-center justify-center h-full min-h-[400px]">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#f84f08]"></div>
+            </div>
+        );
+    }
 
     return (
         <div className="p-4 md:p-8 space-y-6 md:space-y-8">
@@ -47,9 +77,13 @@ export function ComunicacaoOverview({ userRole }: ComunicacaoOverviewProps) {
                         <MessageSquare className="w-4 h-4 text-[#f84f08]" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-slate-800">12</div>
+                        <div className="text-2xl font-bold text-slate-800">
+                            {overview?.newMessages || 0}
+                        </div>
                         <p className="text-xs text-slate-400 mt-1">
-                            {isGestor ? "4 conversas aguardando retorno" : "Aguardando sua leitura"}
+                            {isGestor 
+                                ? `${overview?.newMessages || 0} mensagens aguardando retorno` 
+                                : "Aguardando sua leitura"}
                         </p>
                     </CardContent>
                 </Card>
@@ -63,10 +97,10 @@ export function ComunicacaoOverview({ userRole }: ComunicacaoOverviewProps) {
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold text-slate-800">
-                            {isGestor ? "82%" : "3 novos"}
+                            {overview?.recentAnnouncements?.length || 0}
                         </div>
                         <p className="text-xs text-slate-400 mt-1">
-                            {isGestor ? "Taxa média de abertura" : "Avisos publicados esta semana"}
+                            {isGestor ? "Avisos publicados" : "Comunicados para você"}
                         </p>
                     </CardContent>
                 </Card>
@@ -79,7 +113,9 @@ export function ComunicacaoOverview({ userRole }: ComunicacaoOverviewProps) {
                         <Clock className="w-4 h-4 text-red-500" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-slate-800">5</div>
+                        <div className="text-2xl font-bold text-slate-800">
+                            {overview?.radarAlerts?.length || 0}
+                        </div>
                         <p className="text-xs text-slate-400 mt-1">
                             {isGestor ? "Atrasos identificados na base" : "Vencimentos próximos"}
                         </p>
@@ -90,7 +126,7 @@ export function ComunicacaoOverview({ userRole }: ComunicacaoOverviewProps) {
             {/* SEÇÃO DE CONTEÚDO RECENTE */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
 
-                {/* Lado Esquerdo: Últimas Mensagens (Comum a ambos) */}
+                {/* Lado Esquerdo: Últimas Mensagens */}
                 <div className="space-y-4">
                     <div className="flex items-center justify-between">
                         <h3 className="font-bold text-slate-700 text-sm uppercase tracking-wider flex items-center gap-2">
@@ -103,19 +139,33 @@ export function ComunicacaoOverview({ userRole }: ComunicacaoOverviewProps) {
                         </Button>
                     </div>
                     <div className="bg-white border border-slate-200 rounded-xl divide-y divide-slate-100">
-                        <div className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors cursor-pointer">
-                            <div className="flex flex-col">
-                                <span className="text-sm font-bold text-slate-800">
-                                    {isGestor ? "João Paulo (Tech Solutions)" : "Seu Mentor (Equipe Cluster)"}
-                                </span>
-                                <span className="text-xs text-slate-500 truncate max-w-[200px]">Subi a planilha de custos...</span>
+                        {recentConvs.length > 0 ? (
+                            recentConvs.map((conv) => (
+                                <Link 
+                                    key={conv.id} 
+                                    href={isGestor ? "/mentor/comunicacao/inbox" : "/mentee/comunicacao/inbox"}
+                                    className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors cursor-pointer"
+                                >
+                                    <div className="flex flex-col">
+                                        <span className="text-sm font-bold text-slate-800">{conv.name}</span>
+                                        <span className="text-xs text-slate-500 truncate max-w-[200px]">
+                                            {conv.lastMessage || "Nenhuma mensagem ainda"}
+                                        </span>
+                                    </div>
+                                    <span className="text-[10px] text-slate-400 font-medium">
+                                        {new Date(conv.time).toLocaleDateString()}
+                                    </span>
+                                </Link>
+                            ))
+                        ) : (
+                            <div className="p-8 text-center text-slate-400 text-sm">
+                                Nenhuma conversa recente.
                             </div>
-                            <span className="text-[10px] text-slate-400 font-medium">10 min</span>
-                        </div>
+                        )}
                     </div>
                 </div>
 
-                {/* Lado Direito: Alertas do Radar - Adaptado por Role */}
+                {/* Lado Direito: Alertas do Radar */}
                 <div className="space-y-4">
                     <div className="flex items-center justify-between">
                         <h3 className="font-bold text-slate-700 text-sm uppercase tracking-wider flex items-center gap-2">
@@ -128,23 +178,19 @@ export function ComunicacaoOverview({ userRole }: ComunicacaoOverviewProps) {
                         </Button>
                     </div>
                     <div className="bg-white border border-slate-200 rounded-xl p-4 space-y-4">
-                        {isGestor ? (
-                            /* Visão do Mentor: Foco em cobrar e gerir base */
-                            <div className="flex items-start gap-3 p-3 bg-red-50 border border-red-100 rounded-lg">
-                                <div className="mt-0.5"><AlertTriangle className="w-4 h-4 text-red-600" /></div>
-                                <div>
-                                    <p className="text-sm font-bold text-red-900">Atrasos na Tech Solutions</p>
-                                    <p className="text-xs text-red-700">A entrega de 'DRE Projetada' está vencida há 2 dias.</p>
+                        {overview?.radarAlerts?.length > 0 ? (
+                            overview.radarAlerts.slice(0, 3).map((alert: any) => (
+                                <div key={alert.id} className="flex items-start gap-3 p-3 bg-red-50 border border-red-100 rounded-lg">
+                                    <div className="mt-0.5"><AlertTriangle className="w-4 h-4 text-red-600" /></div>
+                                    <div>
+                                        <p className="text-sm font-bold text-red-900">{alert.title}</p>
+                                        <p className="text-xs text-red-700">{alert.description}</p>
+                                    </div>
                                 </div>
-                            </div>
+                            ))
                         ) : (
-                            /* Visão do Aluno: Foco em fazer e não atrasar */
-                            <div className="flex items-start gap-3 p-3 bg-amber-50 border border-amber-100 rounded-lg">
-                                <div className="mt-0.5"><Target className="w-4 h-4 text-amber-600" /></div>
-                                <div>
-                                    <p className="text-sm font-bold text-amber-900">Entrega para Amanhã</p>
-                                    <p className="text-xs text-amber-700">Não esqueça de enviar seu Mapa de Custos Fixos.</p>
-                                </div>
+                            <div className="p-8 text-center text-slate-400 text-sm">
+                                Nenhum alerta crítico no momento.
                             </div>
                         )}
                     </div>

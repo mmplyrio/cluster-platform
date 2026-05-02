@@ -1,6 +1,6 @@
 import { db } from '../db';
-import { companies, journeys, funnelEvents, tasks, deliverables, users, roles } from '../db/schema';
-import { eq, desc, and, isNull } from 'drizzle-orm';
+import { companies, journeys, funnelEvents, tasks, deliverables, users, roles, mentorshipTemplates } from '../db/schema';
+import { eq, desc, and, isNull, ne } from 'drizzle-orm';
 import { BrevoService } from './brevo.service';
 
 export class MentorService {
@@ -146,39 +146,126 @@ export class MentorService {
         
         const chartData = turmas.map(t => ({
             name: t.nome,
-            value: t.qtdAlunos * 100 // dummy value for chart
+            value: t.qtdAlunos
         }));
 
-        const bottleneckData = [
-            { etapa: "Diagnóstico", alunosTravados: 2 },
-            { etapa: "Planejamento", alunosTravados: 1 },
-            { etapa: "Execução", alunosTravados: 5 },
-        ];
+        // Dados para o Gráfico de Gargalo (Empresas por Etapa Atual)
+        const bottleneckRaw = await db.select({
+            etapa: journeys.etapaAtual,
+        })
+        .from(companies)
+        .innerJoin(journeys, eq(companies.id, journeys.companyId))
+        .where(and(
+            eq(companies.mentorId, mentorId),
+            ne(companies.statusPrograma, 'alumni')
+        ));
+
+        // Contagem manual para evitar problemas de tipos com o Driver do PG no groupBy
+        const bottleneckMap = new Map<string, number>();
+        bottleneckRaw.forEach(b => {
+            const etapa = b.etapa || 'Não Iniciado';
+            bottleneckMap.set(etapa, (bottleneckMap.get(etapa) || 0) + 1);
+        });
+
+        const bottleneckData = Array.from(bottleneckMap.entries()).map(([etapa, count]) => ({
+            etapa,
+            alunosTravados: count
+        }));
 
         return { turmas, chartData, bottleneckData };
     }
 
-    static async getBuilder(mentorId: string) {
-        // We do not have a mentorship templates table yet.
-        // Return dummy templates for now.
-        return [
-            {
-                id: "m1",
-                titulo: "Programa Lucro Estruturado",
-                status: "Ativo",
-                alunosAtivos: 12,
-                faturamentoTotal: "R$ 630.000,00",
-                ultimaAtualizacao: "hoje"
+    static async getTurmaDetails(mentorId: string, turmaId: string) {
+        const menteesList = await db.select({
+            id: companies.id,
+            nome: companies.nome,
+            status: companies.statusPrograma,
+            templateId: journeys.templateId,
+            progresso: journeys.progresso
+        }).from(companies)
+        .leftJoin(journeys, eq(companies.id, journeys.companyId))
+        .where(and(
+            eq(companies.mentorId, mentorId),
+            eq(journeys.templateId, turmaId)
+        ));
+
+        const avgProgress = menteesList.length > 0 
+            ? Math.round(menteesList.reduce((acc, curr) => acc + (curr.progresso || 0), 0) / menteesList.length) 
+            : 0;
+
+        return {
+            nome: turmaId,
+            status: 'Em Andamento',
+            mentoria: 'Lucro Estruturado',
+            metricas: [
+                { title: "Alunos Matriculados", value: menteesList.length, description: "Ativos na turma" },
+                { title: "Progresso Médio", value: `${avgProgress}%`, description: "Média das jornadas" },
+                { title: "Próxima Sessão", value: "A definir", description: "Consulte o calendário" }
+            ],
+            alunos: menteesList.map(m => ({
+                id: m.id,
+                nome: m.nome,
+                turma: m.templateId || 'Padrão',
+                status: m.status === 'active' ? 'Ativo' : (m.status === 'paused' ? 'Pausado' : 'Alumni'),
+            }))
+        };
+    }
+
+    static async getBuilder(mentorId: string): Promise<any> {
+        // Obter os templates reais do mentor
+        const templates = await db.select()
+            .from(mentorshipTemplates)
+            .where(eq(mentorshipTemplates.mentorId, mentorId));
+
+        // Se não houver nenhum, podemos criar um inicial para o mentor teste
+        if (templates.length === 0) {
+            await db.insert(mentorshipTemplates).values({
+                mentorId,
+                titulo: 'Lucro Estruturado',
+                descricao: 'Template padrão de mentoria financeira.',
+                status: 'Ativo',
+                preco: '15000'
+            });
+            return this.getBuilder(mentorId);
+        }
+
+        const menteesList = await db.select({
+            id: companies.id,
+            templateId: journeys.templateId,
+            status: companies.statusPrograma
+        }).from(companies)
+        .leftJoin(journeys, eq(companies.id, journeys.companyId))
+        .where(eq(companies.mentorId, mentorId));
+
+        const mentorias = templates.map(t => {
+            // Verifica alunos vinculados a este template
+            const alunosDesteTemplate = menteesList.filter(m => m.templateId === t.titulo);
+            const alunosAtivos = alunosDesteTemplate.filter(m => m.status === 'active').length;
+            const faturamento = Number(t.preco) * alunosDesteTemplate.length;
+            
+            return {
+                id: t.id,
+                titulo: t.titulo,
+                status: t.status,
+                alunosAtivos: alunosAtivos,
+                faturamentoRaw: faturamento,
+                faturamentoTotal: `R$ ${faturamento.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+                ultimaAtualizacao: t.updatedAt ? new Date(t.updatedAt).toLocaleDateString() : 'há pouco'
+            };
+        });
+
+        const totalFaturamento = mentorias.reduce((acc, curr) => acc + curr.faturamentoRaw, 0);
+        const totalAlunos = menteesList.length;
+        const ativosCount = mentorias.filter(m => m.status === 'Ativo').length;
+
+        return {
+            stats: {
+                totalFaturamento: `R$ ${totalFaturamento.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+                totalAlunos: totalAlunos,
+                produtosAtivos: `${ativosCount}/${mentorias.length}`
             },
-            {
-                id: "m2",
-                titulo: "Mentoria Fast Track Financeiro",
-                status: "Rascunho",
-                alunosAtivos: 0,
-                faturamentoTotal: "R$ 0,00",
-                ultimaAtualizacao: "há 2 dias"
-            }
-        ];
+            mentorias
+        };
     }
 
     static async createMentee(mentorId: string, data: any) {

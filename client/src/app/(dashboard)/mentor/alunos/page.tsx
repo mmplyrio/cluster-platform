@@ -1,12 +1,10 @@
 import { Building2, Users, AlertTriangle, Trophy } from "lucide-react";
-import { Card, CardHeader, CardContent } from "@/components/ui/card";
 
 // Importações dos nossos componentes
 import { StatCard } from "@/components/mentor/StatCard";
 import { CadAlunoSheet } from "@/components/mentor/CadAlunoSheet";
 import { NovoAvisoSheet } from "@/components/mentor/NovoAvisoSheet";
-import { CRMFiltros } from "@/components/mentor/CRMFiltros";
-import { TableCRM, CRMClient } from "@/components/mentor/TableCRM";
+import { CRMContent } from "@/components/mentor/CRMContent";
 
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
@@ -77,15 +75,8 @@ export default async function GestaoDeAlunos() {
                 />
             </div>
 
-            {/* Área da Tabela */}
-            <Card className="border-slate-200 shadow-sm">
-                <CardHeader className="border-b border-slate-100 pb-4 bg-white rounded-t-xl">
-                    <CRMFiltros />
-                </CardHeader>
-                <CardContent className="p-0">
-                    <TableCRM data={clientes} />
-                </CardContent>
-            </Card>
+            {/* Área da Tabela com Filtros Funcionais */}
+            <CRMContent clientes={clientes} />
         </div>
     );
 }

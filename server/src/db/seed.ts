@@ -112,6 +112,26 @@ async function main() {
             }
         }
 
+        // 4. Criando Chat Inicial
+        console.log('Mockando Chat Inicial...');
+        if (mentor && mentorado) {
+            const [conv] = await db.insert(schema.conversations).values({
+                titulo: null, // Individual usa o nome do outro participante
+                tipo: 'INDIVIDUAL'
+            }).returning();
+
+            await db.insert(schema.conversationParticipants).values([
+                { conversationId: conv.id, userId: mentor.id },
+                { conversationId: conv.id, userId: mentorado.id }
+            ]);
+
+            await db.insert(schema.messages).values({
+                conversationId: conv.id,
+                senderId: mentor.id,
+                content: 'Olá! Seja bem-vindo à mentoria Cluster. Já viu o material do Módulo 1?'
+            });
+        }
+
         console.log('✅ Seed finalizado! O banco está populado e pronto para uso visual.');
     } catch (error) {
         console.error('❌ Falha no Seed:', error);

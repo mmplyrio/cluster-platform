@@ -5,10 +5,8 @@ import {
     Users,
     TrendingUp,
     Archive,
-    ExternalLink,
     Copy,
     Trash2,
-    Settings
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -21,6 +19,7 @@ import {
 
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { CardBuilder } from "@/components/mentor/CardBuilder";
 
 async function getBuilderData() {
     const token = (await cookies()).get('session')?.value;
@@ -33,16 +32,19 @@ async function getBuilderData() {
     });
 
     if (!res.ok) {
-        return [];
+        return { stats: null, mentorias: [] };
     }
 
     const json = await res.json();
-    return json.data || [];
+    return json.data || { stats: null, mentorias: [] };
 }
 
 export default async function MentorshipListPage() {
-    const mentorias = await getBuilderData();
-
+    const data = await getBuilderData();
+    
+    // Suporte para estrutura antiga e nova para evitar quebras durante o reload
+    const stats = data?.stats || null;
+    const mentorias = Array.isArray(data) ? data : (data?.mentorias || []);
 
     return (
         <div className="p-8 space-y-8 max-w-7xl mx-auto">
@@ -60,36 +62,8 @@ export default async function MentorshipListPage() {
                 </Button>
             </div>
 
-            {/* MÉTRICAS GERAIS DO PORTFÓLIO */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
-                    <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
-                        <TrendingUp className="w-6 h-6" />
-                    </div>
-                    <div>
-                        <p className="text-xs font-bold text-slate-400 uppercase">Faturamento Total</p>
-                        <p className="text-xl font-bold text-slate-800">R$ 630.000,00</p>
-                    </div>
-                </div>
-                <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
-                    <div className="p-3 bg-[#f84f08]/10 text-[#f84f08] rounded-xl">
-                        <Users className="w-6 h-6" />
-                    </div>
-                    <div>
-                        <p className="text-xs font-bold text-slate-400 uppercase">Total de Alunos</p>
-                        <p className="text-xl font-bold text-slate-800">42</p>
-                    </div>
-                </div>
-                <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
-                    <div className="p-3 bg-blue-50 text-blue-600 rounded-xl">
-                        <Settings className="w-6 h-6" />
-                    </div>
-                    <div>
-                        <p className="text-xs font-bold text-slate-400 uppercase">Produtos Ativos</p>
-                        <p className="text-xl font-bold text-slate-800">1/2</p>
-                    </div>
-                </div>
-            </div>
+            {/* MÉTRICAS GERAIS DO PORTFÓLIO - Agora usando CardBuilder dinâmico! */}
+            <CardBuilder stats={stats} />
 
             {/* LISTAGEM DE PRODUTOS */}
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">

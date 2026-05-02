@@ -36,3 +36,21 @@ export async function createMenteeAction(data: any) {
         return { success: false, error: 'Erro de comunicação com o servidor' };
     }
 }
+
+export async function getTurmaDetailsAction(id: string) {
+    const API_URL = getApiUrl();
+    try {
+        const headers = await getAuthHeaders();
+        const res = await fetch(`${API_URL}/mentor/turmas/${id}`, {
+            headers,
+            cache: 'no-store'
+        });
+
+        if (!res.ok) return null;
+        const json = await res.json();
+        return json.success ? json.data : null;
+    } catch (error) {
+        console.error('Erro ao buscar detalhes da turma:', error);
+        return null;
+    }
+}

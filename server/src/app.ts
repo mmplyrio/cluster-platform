@@ -5,6 +5,7 @@ import authRoutes from './routes/auth.routes';
 import adminRoutes from './routes/admin.routes';
 import mentorRoutes from './routes/mentor.routes';
 import menteeRoutes from './routes/mentee.routes';
+import chatRoutes from './routes/chat.routes';
 
 const app = express();
 
@@ -45,6 +46,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/mentor', mentorRoutes);
 app.use('/api/mentee', menteeRoutes);
+app.use('/api/chat', chatRoutes);
 
 // Fallback 404 handler para rotas não encontradas
 app.use((_req, res) => {
