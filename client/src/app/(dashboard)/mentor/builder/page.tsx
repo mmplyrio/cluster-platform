@@ -41,7 +41,7 @@ async function getBuilderData() {
 
 export default async function MentorshipListPage() {
     const data = await getBuilderData();
-    
+
     // Suporte para estrutura antiga e nova para evitar quebras durante o reload
     const stats = data?.stats || null;
     const mentorias = Array.isArray(data) ? data : (data?.mentorias || []);
@@ -126,7 +126,7 @@ export default async function MentorshipListPage() {
                         {/* BOTÕES DE AÇÃO DO CARD */}
                         <div className="bg-slate-50 p-4 border-t border-slate-100 flex gap-2">
                             <Button variant="outline" className="flex-1 h-9 text-xs font-bold border-slate-200 bg-white" asChild>
-                                <Link href={`/mentor/builder/editar/${mentoria.id}`}>
+                                <Link href={`/mentor/builder/${mentoria.id}`}>
                                     Editar Template
                                 </Link>
                             </Button>

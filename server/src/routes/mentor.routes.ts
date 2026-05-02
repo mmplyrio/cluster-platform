@@ -11,5 +11,7 @@ router.get('/turmas', requireRole(['MENTOR']), MentorController.getTurmas);
 router.get('/turmas/:id', requireRole(['MENTOR']), MentorController.getTurmaDetails);
 router.post('/alunos', requireRole(['MENTOR']), MentorController.createMentee);
 router.get('/builder', requireRole(['MENTOR']), MentorController.getBuilder);
+router.get('/builder/:id', requireRole(['MENTOR']), MentorController.getTemplate);
+router.put('/builder/:id', requireRole(['MENTOR']), MentorController.updateTemplate);
 
 export default router;

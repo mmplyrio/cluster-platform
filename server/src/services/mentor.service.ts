@@ -268,6 +268,30 @@ export class MentorService {
         };
     }
 
+    static async getMentorshipTemplate(id: string, mentorId: string) {
+        const [template] = await db.select()
+            .from(mentorshipTemplates)
+            .where(and(
+                eq(mentorshipTemplates.id, id),
+                eq(mentorshipTemplates.mentorId, mentorId)
+            ));
+        return template;
+    }
+
+    static async updateMentorshipTemplate(id: string, mentorId: string, data: any) {
+        const [updated] = await db.update(mentorshipTemplates)
+            .set({
+                ...data,
+                updatedAt: new Date()
+            })
+            .where(and(
+                eq(mentorshipTemplates.id, id),
+                eq(mentorshipTemplates.mentorId, mentorId)
+            ))
+            .returning();
+        return updated;
+    }
+
     static async createMentee(mentorId: string, data: any) {
         // 1. Obter informações do mentor
         const [mentor] = await db.select().from(users).where(eq(users.id, mentorId));
