@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, uuid, integer, boolean } from 'drizzle-orm/pg-core';
+import { pgTable, text, timestamp, uuid, integer, boolean, decimal } from 'drizzle-orm/pg-core';
 import { relations, InferSelectModel, InferInsertModel } from 'drizzle-orm';
 
 // 1. Leads
@@ -186,7 +186,54 @@ export const actionPlanItems = pgTable('action_plan_items', {
     prazo: timestamp('prazo'),
     status: text('status').default('pending'), // pending, done
 });
+// 17. Conversations (Inbox)
+export const conversations = pgTable('conversations', {
+    id: uuid('id').primaryKey().defaultRandom(),
+    titulo: text('titulo'), // Nome do grupo ou null para individual
+    tipo: text('tipo').notNull().default('INDIVIDUAL'), // INDIVIDUAL, GRUPO
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+});
 
+// 18. Conversation Participants
+export const conversationParticipants = pgTable('conversation_participants', {
+    id: uuid('id').primaryKey().defaultRandom(),
+    conversationId: uuid('conversation_id').references(() => conversations.id, { onDelete: 'cascade' }).notNull(),
+    userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+    joinedAt: timestamp('joined_at').defaultNow().notNull(),
+});
+
+// 19. Messages
+export const messages = pgTable('messages', {
+    id: uuid('id').primaryKey().defaultRandom(),
+    conversationId: uuid('conversation_id').references(() => conversations.id, { onDelete: 'cascade' }).notNull(),
+    senderId: uuid('sender_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+    content: text('content').notNull(),
+    isRead: boolean('is_read').default(false).notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+// 20. Announcements (Broadcasts)
+export const announcements = pgTable('announcements', {
+    id: uuid('id').primaryKey().defaultRandom(),
+    title: text('title').notNull(),
+    content: text('content').notNull(),
+    category: text('category').default('info'), // info, urgent, success
+    targetType: text('target_type').notNull(), // 'all', 'specific_companies'
+    authorId: uuid('author_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+// 21. Mentorship Templates (Products)
+export const mentorshipTemplates = pgTable('mentorship_templates', {
+    id: uuid('id').primaryKey().defaultRandom(),
+    mentorId: uuid('mentor_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+    titulo: text('titulo').notNull(),
+    descricao: text('descricao'),
+    status: text('status').default('Ativo'), // Ativo, Rascunho, Arquivado
+    preco: decimal('preco', { precision: 10, scale: 2 }).default('0'),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
 
 // Relacionamentos
 
@@ -273,6 +320,29 @@ export const actionPlanItemsRelations = relations(actionPlanItems, ({ one }) => 
     company: one(companies, { fields: [actionPlanItems.companyId], references: [companies.id] }),
 }));
 
+export const conversationsRelations = relations(conversations, ({ many }) => ({
+    participants: many(conversationParticipants),
+    messages: many(messages),
+}));
+
+export const conversationParticipantsRelations = relations(conversationParticipants, ({ one }) => ({
+    conversation: one(conversations, { fields: [conversationParticipants.conversationId], references: [conversations.id] }),
+    user: one(users, { fields: [conversationParticipants.userId], references: [users.id] }),
+}));
+
+export const messagesRelations = relations(messages, ({ one }) => ({
+    conversation: one(conversations, { fields: [messages.conversationId], references: [conversations.id] }),
+    sender: one(users, { fields: [messages.senderId], references: [users.id] }),
+}));
+
+export const announcementsRelations = relations(announcements, ({ one }) => ({
+    author: one(users, { fields: [announcements.authorId], references: [users.id] }),
+}));
+
+export const mentorshipTemplatesRelations = relations(mentorshipTemplates, ({ one }) => ({
+    mentor: one(users, { fields: [mentorshipTemplates.mentorId], references: [users.id] }),
+}));
+
 // Tipagens - Exportando com InferSelectModel e InferInsertModel
 
 export type Lead = InferSelectModel<typeof leads>;
@@ -319,3 +389,18 @@ export type NewIndicator = InferInsertModel<typeof indicators>;
 
 export type ActionPlanItem = InferSelectModel<typeof actionPlanItems>;
 export type NewActionPlanItem = InferInsertModel<typeof actionPlanItems>;
+
+export type Conversation = InferSelectModel<typeof conversations>;
+export type NewConversation = InferInsertModel<typeof conversations>;
+
+export type ConversationParticipant = InferSelectModel<typeof conversationParticipants>;
+export type NewConversationParticipant = InferInsertModel<typeof conversationParticipants>;
+
+export type Message = InferSelectModel<typeof messages>;
+export type NewMessage = InferInsertModel<typeof messages>;
+
+export type Announcement = InferSelectModel<typeof announcements>;
+export type NewAnnouncement = InferInsertModel<typeof announcements>;
+
+export type MentorshipTemplate = InferSelectModel<typeof mentorshipTemplates>;
+export type NewMentorshipTemplate = InferInsertModel<typeof mentorshipTemplates>;

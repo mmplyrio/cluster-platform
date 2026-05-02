@@ -1,19 +1,20 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
     Search, Plus, MoreVertical, Send, Paperclip,
     Activity, Users, User as UserIcon, ArrowLeft, MessageSquare
 } from "lucide-react";
+import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import {
     Dialog, DialogContent, DialogDescription,
     DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { getConversationsAction, getMessagesAction, sendMessageAction } from "@/actions/chat";
 
 // Definição de tipos para garantir consistência entre perfis
 export type UserRole = "MENTOR" | "ALUNO" | "ADMIN";
@@ -22,9 +23,10 @@ interface ChatContact {
     id: string;
     name: string;
     type: "INDIVIDUAL" | "GRUPO";
+    targetId?: string | null;
     role?: UserRole;
     lastMessage: string;
-    time: string;
+    time: string | Date;
     unread: number;
     online?: boolean;
 }
@@ -35,15 +37,80 @@ interface InboxCentralProps {
 }
 
 export function InboxCentral({ userRole, userId }: InboxCentralProps) {
-    const [activeChat, setActiveChat] = useState<string | null>("c1");
+    const [conversas, setConversas] = useState<ChatContact[]>([]);
+    const [messages, setMessages] = useState<any[]>([]);
+    const [activeChat, setActiveChat] = useState<string | null>(null);
     const [showChatOnMobile, setShowChatOnMobile] = useState<boolean>(false);
+    const [newMessage, setNewMessage] = useState("");
+    const [isLoading, setIsLoading] = useState(true);
+    const messagesEndRef = useRef<HTMLDivElement>(null);
 
-    // Mock de conversas (Em produção, isso viria filtrado pelo seu Backend via userId/role)
-    const conversas: ChatContact[] = [
-        { id: "c1", name: "Turma Agosto - Lucro Estruturado", type: "GRUPO", lastMessage: "João (Tech Solutions): Subi o arquivo.", time: "10:30", unread: 2 },
-        { id: "c2", name: "Tech Solutions Ltda", type: "INDIVIDUAL", role: "ALUNO", lastMessage: "Obrigado pelo feedback!", time: "Ontem", unread: 0, online: true },
-        { id: "c3", name: "Ana Costa", type: "INDIVIDUAL", role: "MENTOR", lastMessage: "Pode me ajudar com o caso?", time: "Ontem", unread: 0, online: false },
-    ];
+    const scrollToBottom = () => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    };
+
+    // Carregar conversas iniciais
+    useEffect(() => {
+        const loadConversations = async () => {
+            const data = await getConversationsAction();
+            setConversas(data);
+            if (data.length > 0 && !activeChat) {
+                setActiveChat(data[0].id);
+            }
+            setIsLoading(false);
+        };
+        loadConversations();
+    }, []);
+
+    // Carregar mensagens da conversa ativa
+    useEffect(() => {
+        if (activeChat) {
+            const loadMessages = async () => {
+                const data = await getMessagesAction(activeChat);
+                setMessages(data);
+            };
+            loadMessages();
+            
+            // Polling para novas mensagens (já que não temos WebSockets ainda)
+            const interval = setInterval(loadMessages, 5000);
+            return () => clearInterval(interval);
+        }
+    }, [activeChat]);
+
+    // Scroll para o fim quando as mensagens mudam
+    useEffect(() => {
+        scrollToBottom();
+    }, [messages]);
+
+    const handleSend = async (e?: React.FormEvent) => {
+        if (e) e.preventDefault();
+        if (!newMessage.trim() || !activeChat) return;
+
+        const content = newMessage;
+        setNewMessage("");
+
+        const result = await sendMessageAction(activeChat, content);
+        if (result) {
+            // Adição otimista para resposta imediata na UI
+            setMessages(prev => [...prev, {
+                id: result.id,
+                content: content,
+                senderId: userId,
+                createdAt: new Date().toISOString(),
+                senderName: "Você"
+            }]);
+        }
+    };
+
+    const activeChatData = conversas.find(c => c.id === activeChat);
+
+    if (isLoading) {
+        return (
+            <div className="flex flex-1 items-center justify-center h-full bg-white">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#f84f08]"></div>
+            </div>
+        );
+    }
 
     return (
         <div className="flex flex-1 w-full h-full bg-white relative overflow-hidden rounded-r-2xl min-h-0">
@@ -73,7 +140,7 @@ export function InboxCentral({ userRole, userId }: InboxCentralProps) {
                                     </TabsTrigger>
                                 </TabsList>
                                 <div className="py-8 text-center text-sm text-slate-400 border-2 border-dashed border-slate-100 rounded-xl mt-4">
-                                    Filtrando contatos para perfil: {userRole}
+                                    Selecione um contato para iniciar o papo.
                                 </div>
                             </Tabs>
                         </DialogContent>
@@ -88,32 +155,40 @@ export function InboxCentral({ userRole, userId }: InboxCentralProps) {
                 </div>
 
                 <div className="flex-1 overflow-y-auto">
-                    {conversas.map((chat) => (
-                        <button
-                            key={chat.id}
-                            onClick={() => {
-                                setActiveChat(chat.id);
-                                setShowChatOnMobile(true);
-                            }}
-                            className={`w-full flex items-start gap-3 p-3 transition-colors border-b border-slate-50 last:border-0 relative
-                                ${activeChat === chat.id ? 'bg-[#f84f08]/5' : 'hover:bg-slate-50'}
-                            `}
-                        >
-                            {activeChat === chat.id && <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#f84f08]" />}
-                            <Avatar className="h-10 w-10 border border-slate-100">
-                                <AvatarFallback className={chat.type === "GRUPO" ? "bg-slate-800 text-white" : "bg-slate-100 text-slate-600"}>
-                                    {chat.type === "GRUPO" ? <Users className="w-5 h-5" /> : chat.name.substring(0, 2).toUpperCase()}
-                                </AvatarFallback>
-                            </Avatar>
-                            <div className="flex-1 min-w-0 text-left">
-                                <div className="flex justify-between items-baseline">
-                                    <span className="font-bold text-slate-800 text-sm truncate">{chat.name}</span>
-                                    <span className="text-[10px] text-slate-400">{chat.time}</span>
+                    {conversas.length > 0 ? (
+                        conversas.map((chat) => (
+                            <button
+                                key={chat.id}
+                                onClick={() => {
+                                    setActiveChat(chat.id);
+                                    setShowChatOnMobile(true);
+                                }}
+                                className={`w-full flex items-start gap-3 p-3 transition-colors border-b border-slate-50 last:border-0 relative
+                                    ${activeChat === chat.id ? 'bg-[#f84f08]/5' : 'hover:bg-slate-50'}
+                                `}
+                            >
+                                {activeChat === chat.id && <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#f84f08]" />}
+                                <Avatar className="h-10 w-10 border border-slate-100">
+                                    <AvatarFallback className={chat.type === "GRUPO" ? "bg-slate-800 text-white" : "bg-slate-100 text-slate-600"}>
+                                        {chat.type === "GRUPO" ? <Users className="w-5 h-5" /> : chat.name.substring(0, 2).toUpperCase()}
+                                    </AvatarFallback>
+                                </Avatar>
+                                <div className="flex-1 min-w-0 text-left">
+                                    <div className="flex justify-between items-baseline">
+                                        <span className="font-bold text-slate-800 text-sm truncate">{chat.name}</span>
+                                        <span className="text-[10px] text-slate-400">
+                                            {new Date(chat.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                        </span>
+                                    </div>
+                                    <span className="text-xs truncate block text-slate-500">{chat.lastMessage}</span>
                                 </div>
-                                <span className="text-xs truncate block text-slate-500">{chat.lastMessage}</span>
-                            </div>
-                        </button>
-                    ))}
+                            </button>
+                        ))
+                    ) : (
+                        <div className="p-8 text-center text-slate-400 text-sm">
+                            Nenhuma conversa encontrada.
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -127,45 +202,77 @@ export function InboxCentral({ userRole, userId }: InboxCentralProps) {
                                     <ArrowLeft className="w-5 h-5 text-slate-500" />
                                 </Button>
                                 <Avatar className="h-9 w-9 border border-slate-200 shrink-0">
-                                    <AvatarFallback>TS</AvatarFallback>
+                                    <AvatarFallback>{activeChatData?.name.substring(0, 2).toUpperCase()}</AvatarFallback>
                                 </Avatar>
                                 <div className="min-w-0">
-                                    <h3 className="font-bold text-sm text-slate-800 truncate">Tech Solutions Ltda</h3>
+                                    <h3 className="font-bold text-sm text-slate-800 truncate">{activeChatData?.name}</h3>
                                     <p className="text-[10px] text-emerald-600 font-bold uppercase tracking-wider">Online agora</p>
                                 </div>
                             </div>
 
                             <div className="flex items-center gap-1 md:gap-2 shrink-0">
-                                {/* Ação exclusiva para Mentores e Admins */}
-                                {(userRole === "MENTOR" || userRole === "ADMIN") && (
-                                    <Button variant="outline" size="sm" className="h-8 text-xs border-slate-300 hover:bg-slate-50 hidden sm:flex">
-                                        <Activity className="w-3.5 h-3.5 mr-1.5" /> Raio-X
+                                {(userRole === "MENTOR" || userRole === "ADMIN") && activeChatData?.targetId && (
+                                    <Button variant="outline" size="sm" className="h-8 text-xs border-slate-300 hover:bg-slate-50 hidden sm:flex" asChild>
+                                        <Link href={`/mentor/alunos/${activeChatData.targetId}`}>
+                                            <Activity className="w-3.5 h-3.5 mr-1.5" /> Raio-X
+                                        </Link>
                                     </Button>
                                 )}
                                 <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400"><MoreVertical className="w-4 h-4" /></Button>
                             </div>
                         </div>
 
-                        <div className="flex-1 overflow-y-auto min-h-0 p-4 md:p-6">
-                            <div className="bg-white border border-slate-100 p-4 rounded-2xl shadow-sm max-w-[85%] md:max-w-[70%]">
-                                <p className="text-sm text-slate-700 leading-relaxed">
-                                    Olá! Recebi as instruções da etapa de Organização. Já estamos mapeando os processos.
-                                </p>
-                                <span className="text-[10px] text-slate-400 mt-1 block text-right">10:15</span>
-                            </div>
+                        <div className="flex-1 overflow-y-auto min-h-0 p-4 md:p-6 space-y-4">
+                            {messages.map((msg) => (
+                                <div 
+                                    key={msg.id} 
+                                    className={`flex flex-col ${msg.senderId === userId ? 'items-end' : 'items-start'}`}
+                                >
+                                    <div className={`p-3 rounded-2xl shadow-sm max-w-[85%] md:max-w-[70%] ${
+                                        msg.senderId === userId 
+                                            ? 'bg-[#f84f08] text-white' 
+                                            : 'bg-white border border-slate-100 text-slate-700'
+                                    }`}>
+                                        <p className="text-sm leading-relaxed">{msg.content}</p>
+                                        <span className={`text-[10px] mt-1 block text-right ${
+                                            msg.senderId === userId ? 'text-white/70' : 'text-slate-400'
+                                        }`}>
+                                            {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                        </span>
+                                    </div>
+                                    <span className="text-[9px] text-slate-400 mt-0.5 px-1">
+                                        {msg.senderId === userId ? '' : msg.senderName}
+                                    </span>
+                                </div>
+                            ))}
+                            <div ref={messagesEndRef} />
                         </div>
 
-                        <div className="p-3 md:p-4 bg-white border-t border-slate-100 shrink-0">
+                        <form onSubmit={handleSend} className="p-3 md:p-4 bg-white border-t border-slate-100 shrink-0">
                             <div className="flex items-center gap-1 md:gap-2 bg-slate-50 border border-slate-200 rounded-xl p-2 focus-within:ring-1 focus-within:ring-[#f84f08]/50 transition-all">
-                                <Button variant="ghost" size="icon" className="text-slate-400 shrink-0"><Paperclip className="w-5 h-5" /></Button>
+                                <Button variant="ghost" size="icon" className="text-slate-400 shrink-0" type="button"><Paperclip className="w-5 h-5" /></Button>
                                 <textarea
                                     placeholder="Mensagem..."
                                     className="flex-1 bg-transparent border-0 focus:ring-0 resize-none text-sm p-2 text-slate-700 min-w-0"
                                     rows={1}
+                                    value={newMessage}
+                                    onChange={(e) => setNewMessage(e.target.value)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter' && !e.shiftKey) {
+                                            e.preventDefault();
+                                            handleSend();
+                                        }
+                                    }}
                                 />
-                                <Button size="icon" className="bg-[#f84f08] hover:bg-[#d94205] text-white h-9 w-9 shrink-0"><Send className="w-4 h-4" /></Button>
+                                <Button 
+                                    size="icon" 
+                                    className="bg-[#f84f08] hover:bg-[#d94205] text-white h-9 w-9 shrink-0"
+                                    type="submit"
+                                >
+                                    <Send className="w-4 h-4" />
+                                </Button>
                             </div>
-                        </div>
+                        </form>
                     </>
                 ) : (
                     <div className="flex flex-1 flex-col items-center justify-center h-full text-slate-400">
