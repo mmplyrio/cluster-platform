@@ -41,11 +41,11 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
                             asChild
                             className="data-[slot=sidebar-menu-button]:p-1.5!"
                         >
-                            <a href="/dashboard">
+                            <a href={isMentor ? "/mentor" : "/mentee"}>
                                 <LogoBranca />
                             </a>
                         </SidebarMenuButton>
-                    </SidebarMenuItem>
+                        </SidebarMenuItem>
                 </SidebarMenu>
             </SidebarHeader>
             <SidebarContent className="pt-6">

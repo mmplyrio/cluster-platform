@@ -4,6 +4,50 @@ import { SidebarProvider } from '@/components/ui/sidebar';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
+import { Metadata } from 'next';
+
+export async function generateMetadata(): Promise<Metadata> {
+  const user = await getUserProfile();
+  
+  const baseMetadata = {
+    icons: {
+      icon: '/logomarca.svg',
+    },
+  };
+
+  if (!user) {
+    return {
+      ...baseMetadata,
+      title: 'Cluster | Inovação & Tecnologia',
+      description: 'Cluster | Inovação e Tecnologia',
+    };
+  }
+
+  const role = (user.role || '').toUpperCase();
+
+  if (role === 'MENTOR') {
+    return {
+      ...baseMetadata,
+      title: 'Cluster | Dashboard do Mentor',
+      description: 'Área exclusiva para mentores da Cluster.',
+    };
+  }
+
+  if (role === 'ALUNO') {
+    return {
+      ...baseMetadata,
+      title: 'Cluster | Dashboard do Aluno',
+      description: 'Área exclusiva para alunos da Cluster.',
+    };
+  }
+
+  return {
+    ...baseMetadata,
+    title: 'Cluster | Inovação & Tecnologia',
+    description: 'Cluster | Inovação e Tecnologia',
+  };
+}
+
 async function getUserProfile() {
   const token = (await cookies()).get('session')?.value;
   if (!token) return null;
@@ -14,7 +58,7 @@ async function getUserProfile() {
       headers: { 'Authorization': `Bearer ${token}` },
       cache: 'no-store'
     });
-    
+
     if (!res.ok) {
       console.error(`[getUserProfile] Backend retornou status ${res.status} para ${apiUrl}/auth/me`);
       return null;
@@ -34,7 +78,7 @@ export default async function DashboardLayout({
   children: React.ReactNode;
 }) {
   const user = await getUserProfile();
-  
+
   if (!user) {
     redirect('/login?error=session_expired');
   }
