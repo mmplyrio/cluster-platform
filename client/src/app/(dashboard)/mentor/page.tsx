@@ -1,6 +1,6 @@
 import MentorDashboard from "@/components/mentor/cards";
-import { TableMentee, Mentee } from "@/components/mentor/TableMentee";
-import { AvisosList, Aviso } from "@/components/shared/AvisosList";
+import { TableCRM } from "@/components/mentor/TableCRM";
+import { AvisosList } from "@/components/shared/AvisosList";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
@@ -8,7 +8,6 @@ async function getDashboardData() {
     const token = (await cookies()).get('session')?.value;
     if (!token) redirect('/login');
 
-    // Leitura dentro da função = avaliada em runtime (não em build time)
     const apiUrl = process.env.INTERNAL_API_URL || 'http://localhost:4000/api';
     const res = await fetch(`${apiUrl}/mentor/dashboard`, {
         headers: {
@@ -39,7 +38,7 @@ export default async function MentorPage() {
             </div>
             <MentorDashboard metricas={metricas} />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <TableMentee data={alunos} />
+                <TableCRM variant="dashboard" data={alunos} />
                 <AvisosList avisos={avisos} />
             </div>
         </div>

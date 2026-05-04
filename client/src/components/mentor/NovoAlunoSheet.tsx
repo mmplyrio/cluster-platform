@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Check, ChevronsUpDown, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -35,27 +35,63 @@ import {
     SelectTrigger,
     SelectValue
 } from "@/components/ui/select";
-import { cn } from "@/lib/utils"; // Utilitário padrão do shadcn para classes
+import { cn } from "@/lib/utils";
+import { getAlunosAction, addAlunoToTurmaAction } from "@/actions/mentor";
 
-// Mock do seu banco de dados global de alunos
-const alunosGlobais = [
-    { id: "A01", nome: "Tech Solutions (CNPJ: 12.345...)" },
-    { id: "A02", nome: "Comercial Silva (CNPJ: 98.765...)" },
-    { id: "A03", nome: "Padaria do João (CNPJ: 45.678...)" },
-    { id: "A04", nome: "XPTO Engenharia (CNPJ: 11.222...)" },
-];
+interface AdicionarAlunoSheetProps {
+    turmaId: string;
+}
 
-export function AdicionarAlunoSheet() {
+export function AdicionarAlunoSheet({ turmaId }: AdicionarAlunoSheetProps) {
     const [open, setOpen] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+    
+    // Lista de alunos reais vindos do DB
+    const [alunosGlobais, setAlunosGlobais] = useState<any[]>([]);
 
     // Estados do formulário
     const [openCombobox, setOpenCombobox] = useState(false);
     const [alunoSelecionado, setAlunoSelecionado] = useState("");
+    const [dataIngresso, setDataIngresso] = useState("");
+    const [moduloId, setModuloId] = useState("mod1");
+    const [objetivo, setObjetivo] = useState("");
 
-    const handleSubmit = (e: React.FormEvent) => {
+    // Carregar alunos ao abrir a sheet
+    useEffect(() => {
+        if (open) {
+            const fetchAlunos = async () => {
+                const data = await getAlunosAction();
+                if (data && data.clientes) {
+                    setAlunosGlobais(data.clientes);
+                }
+            };
+            fetchAlunos();
+        }
+    }, [open]);
+
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        console.log("Vinculando aluno ID:", alunoSelecionado, "à turma...");
-        setOpen(false);
+        setIsLoading(true);
+        
+        const payload = {
+            companyId: alunoSelecionado,
+            dataIngresso,
+            moduloId,
+            objetivo
+        };
+
+        const res = await addAlunoToTurmaAction(turmaId, payload);
+        setIsLoading(false);
+
+        if (res && res.success) {
+            setOpen(false);
+            setAlunoSelecionado("");
+            setDataIngresso("");
+            setObjetivo("");
+            window.location.reload(); // Recarregar a página para exibir o novo aluno
+        } else {
+            alert(res?.error || "Erro ao vincular aluno");
+        }
     };
 
     return (
@@ -90,7 +126,7 @@ export function AdicionarAlunoSheet() {
                                         className="justify-between text-slate-600 font-normal"
                                     >
                                         {alunoSelecionado
-                                            ? alunosGlobais.find((aluno) => aluno.id === alunoSelecionado)?.nome
+                                            ? alunosGlobais.find((aluno) => aluno.id === alunoSelecionado)?.empresa
                                             : "Selecione a empresa..."}
                                         <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                     </Button>
@@ -104,7 +140,7 @@ export function AdicionarAlunoSheet() {
                                                 {alunosGlobais.map((aluno) => (
                                                     <CommandItem
                                                         key={aluno.id}
-                                                        value={aluno.nome}
+                                                        value={aluno.empresa}
                                                         onSelect={() => {
                                                             setAlunoSelecionado(aluno.id);
                                                             setOpenCombobox(false);
@@ -116,7 +152,7 @@ export function AdicionarAlunoSheet() {
                                                                 alunoSelecionado === aluno.id ? "opacity-100" : "opacity-0"
                                                             )}
                                                         />
-                                                        {aluno.nome}
+                                                        {aluno.empresa}
                                                     </CommandItem>
                                                 ))}
                                             </CommandGroup>
@@ -139,7 +175,7 @@ export function AdicionarAlunoSheet() {
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <Label>Ponto de Partida</Label>
-                                <Select defaultValue="mod1">
+                                <Select value={moduloId} onValueChange={setModuloId}>
                                     <SelectTrigger>
                                         <SelectValue placeholder="Selecione..." />
                                     </SelectTrigger>
@@ -153,7 +189,7 @@ export function AdicionarAlunoSheet() {
 
                             <div className="space-y-2">
                                 <Label>Data de Ingresso</Label>
-                                <Input type="date" required className="text-slate-600" />
+                                <Input type="date" required className="text-slate-600" value={dataIngresso} onChange={e => setDataIngresso(e.target.value)} />
                             </div>
                         </div>
 
@@ -162,21 +198,23 @@ export function AdicionarAlunoSheet() {
                             <Textarea
                                 placeholder="Ex: Foco extremo em estancar vazamentos de caixa no módulo 2."
                                 className="resize-none h-24"
+                                value={objetivo}
+                                onChange={e => setObjetivo(e.target.value)}
                             />
                         </div>
                     </div>
 
                     {/* RODAPÉ */}
                     <SheetFooter className="pt-6 border-t border-slate-100 mt-8">
-                        <Button variant="ghost" type="button" onClick={() => setOpen(false)}>
+                        <Button variant="ghost" type="button" onClick={() => setOpen(false)} disabled={isLoading}>
                             Cancelar
                         </Button>
                         <Button
                             type="submit"
                             className="bg-[#f84f08] hover:bg-[#d94205]"
-                            disabled={!alunoSelecionado} // Trava o botão se não selecionar ninguém
+                            disabled={!alunoSelecionado || isLoading} // Trava o botão se não selecionar ninguém
                         >
-                            Vincular à Turma
+                            {isLoading ? "Vinculando..." : "Vincular à Turma"}
                         </Button>
                     </SheetFooter>
                 </form>

@@ -113,6 +113,38 @@ class MentorService {
         };
     }
     static async getTurmas(mentorId) {
+        // 1. Fetch real turmas
+        const realTurmas = await db_1.db.select({
+            id: schema_1.turmas.id,
+            nome: schema_1.turmas.nome,
+            descricao: schema_1.turmas.descricao,
+            status: schema_1.turmas.status,
+            preco: schema_1.turmas.preco,
+            dataInicio: schema_1.turmas.dataInicio,
+            vagas: schema_1.turmas.vagas,
+            produto: schema_1.mentorshipTemplates.titulo
+        }).from(schema_1.turmas)
+            .leftJoin(schema_1.mentorshipTemplates, (0, drizzle_orm_1.eq)(schema_1.turmas.templateId, schema_1.mentorshipTemplates.id))
+            .where((0, drizzle_orm_1.eq)(schema_1.turmas.mentorId, mentorId));
+        const formattedTurmas = realTurmas.map(t => {
+            let statusMapped = "Em Andamento";
+            if (t.status === 'planejada')
+                statusMapped = "Inscrições Abertas";
+            if (t.status === 'concluida')
+                statusMapped = "Concluída";
+            return {
+                id: t.id,
+                nome: t.nome,
+                qtdAlunos: "0", // Será implementado no futuro via join
+                status: statusMapped,
+                descricao: t.descricao,
+                produto: t.produto || "Sem Produto",
+                preco: t.preco ? t.preco.toString() : "0",
+                dataInicio: t.dataInicio ? t.dataInicio.toISOString().split('T')[0] : undefined,
+                vagas: t.vagas?.toString() || "Ilimitadas"
+            };
+        });
+        // 2. Data for Charts (mantendo lógica anterior provisoriamente)
         const menteesList = await db_1.db.select({
             id: schema_1.companies.id,
             status: schema_1.companies.statusPrograma,
@@ -120,48 +152,132 @@ class MentorService {
         }).from(schema_1.companies)
             .leftJoin(schema_1.journeys, (0, drizzle_orm_1.eq)(schema_1.companies.id, schema_1.journeys.companyId))
             .where((0, drizzle_orm_1.eq)(schema_1.companies.mentorId, mentorId));
-        // Group by templateId
         const turmasMap = new Map();
         menteesList.forEach(m => {
             const key = m.templateId || 'Sem Turma';
             if (!turmasMap.has(key)) {
-                turmasMap.set(key, { id: key, nome: key, qtdAlunos: 0, status: 'Em Andamento' });
+                turmasMap.set(key, { id: key, nome: key, qtdAlunos: 0 });
             }
             turmasMap.get(key).qtdAlunos += 1;
         });
-        const turmas = Array.from(turmasMap.values());
-        const chartData = turmas.map(t => ({
+        const chartData = Array.from(turmasMap.values()).map(t => ({
             name: t.nome,
-            value: t.qtdAlunos * 100 // dummy value for chart
+            value: t.qtdAlunos
         }));
-        const bottleneckData = [
-            { etapa: "Diagnóstico", alunosTravados: 2 },
-            { etapa: "Planejamento", alunosTravados: 1 },
-            { etapa: "Execução", alunosTravados: 5 },
-        ];
-        return { turmas, chartData, bottleneckData };
+        // Dados para o Gráfico de Gargalo (Empresas por Etapa Atual)
+        const bottleneckRaw = await db_1.db.select({
+            etapa: schema_1.journeys.etapaAtual,
+        })
+            .from(schema_1.companies)
+            .innerJoin(schema_1.journeys, (0, drizzle_orm_1.eq)(schema_1.companies.id, schema_1.journeys.companyId))
+            .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.companies.mentorId, mentorId), (0, drizzle_orm_1.ne)(schema_1.companies.statusPrograma, 'alumni')));
+        // Contagem manual para evitar problemas de tipos com o Driver do PG no groupBy
+        const bottleneckMap = new Map();
+        bottleneckRaw.forEach(b => {
+            const etapa = b.etapa || 'Não Iniciado';
+            bottleneckMap.set(etapa, (bottleneckMap.get(etapa) || 0) + 1);
+        });
+        const bottleneckData = Array.from(bottleneckMap.entries()).map(([etapa, count]) => ({
+            etapa,
+            alunosTravados: count
+        }));
+        return { turmas: formattedTurmas, chartData, bottleneckData };
+    }
+    static async getTurmaDetails(mentorId, turmaId) {
+        const menteesList = await db_1.db.select({
+            id: schema_1.companies.id,
+            nome: schema_1.companies.nome,
+            status: schema_1.companies.statusPrograma,
+            templateId: schema_1.journeys.templateId,
+            progresso: schema_1.journeys.progresso
+        }).from(schema_1.companies)
+            .leftJoin(schema_1.journeys, (0, drizzle_orm_1.eq)(schema_1.companies.id, schema_1.journeys.companyId))
+            .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.companies.mentorId, mentorId), (0, drizzle_orm_1.eq)(schema_1.journeys.templateId, turmaId)));
+        const avgProgress = menteesList.length > 0
+            ? Math.round(menteesList.reduce((acc, curr) => acc + (curr.progresso || 0), 0) / menteesList.length)
+            : 0;
+        return {
+            nome: turmaId,
+            status: 'Em Andamento',
+            mentoria: 'Lucro Estruturado',
+            metricas: [
+                { title: "Alunos Matriculados", value: menteesList.length, description: "Ativos na turma" },
+                { title: "Progresso Médio", value: `${avgProgress}%`, description: "Média das jornadas" },
+                { title: "Próxima Sessão", value: "A definir", description: "Consulte o calendário" }
+            ],
+            alunos: menteesList.map(m => ({
+                id: m.id,
+                nome: m.nome,
+                turma: m.templateId || 'Padrão',
+                status: m.status === 'active' ? 'Ativo' : (m.status === 'paused' ? 'Pausado' : 'Alumni'),
+            }))
+        };
     }
     static async getBuilder(mentorId) {
-        // We do not have a mentorship templates table yet.
-        // Return dummy templates for now.
-        return [
-            {
-                id: "m1",
-                titulo: "Programa Lucro Estruturado",
-                status: "Ativo",
-                alunosAtivos: 12,
-                faturamentoTotal: "R$ 630.000,00",
-                ultimaAtualizacao: "hoje"
+        // Obter os templates reais do mentor
+        const templates = await db_1.db.select()
+            .from(schema_1.mentorshipTemplates)
+            .where((0, drizzle_orm_1.eq)(schema_1.mentorshipTemplates.mentorId, mentorId));
+        // Se não houver nenhum, podemos criar um inicial para o mentor teste
+        if (templates.length === 0) {
+            await db_1.db.insert(schema_1.mentorshipTemplates).values({
+                mentorId,
+                titulo: 'Lucro Estruturado',
+                descricao: 'Template padrão de mentoria financeira.',
+                status: 'Ativo',
+                preco: '15000'
+            });
+            return this.getBuilder(mentorId);
+        }
+        const menteesList = await db_1.db.select({
+            id: schema_1.companies.id,
+            templateId: schema_1.journeys.templateId,
+            status: schema_1.companies.statusPrograma
+        }).from(schema_1.companies)
+            .leftJoin(schema_1.journeys, (0, drizzle_orm_1.eq)(schema_1.companies.id, schema_1.journeys.companyId))
+            .where((0, drizzle_orm_1.eq)(schema_1.companies.mentorId, mentorId));
+        const mentorias = templates.map(t => {
+            // Verifica alunos vinculados a este template
+            const alunosDesteTemplate = menteesList.filter(m => m.templateId === t.titulo);
+            const alunosAtivos = alunosDesteTemplate.filter(m => m.status === 'active').length;
+            const faturamento = Number(t.preco) * alunosDesteTemplate.length;
+            return {
+                id: t.id,
+                titulo: t.titulo,
+                status: t.status,
+                alunosAtivos: alunosAtivos,
+                faturamentoRaw: faturamento,
+                faturamentoTotal: `R$ ${faturamento.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+                ultimaAtualizacao: t.updatedAt ? new Date(t.updatedAt).toLocaleDateString() : 'há pouco'
+            };
+        });
+        const totalFaturamento = mentorias.reduce((acc, curr) => acc + curr.faturamentoRaw, 0);
+        const totalAlunos = menteesList.length;
+        const ativosCount = mentorias.filter(m => m.status === 'Ativo').length;
+        return {
+            stats: {
+                totalFaturamento: `R$ ${totalFaturamento.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+                totalAlunos: totalAlunos,
+                produtosAtivos: `${ativosCount}/${mentorias.length}`
             },
-            {
-                id: "m2",
-                titulo: "Mentoria Fast Track Financeiro",
-                status: "Rascunho",
-                alunosAtivos: 0,
-                faturamentoTotal: "R$ 0,00",
-                ultimaAtualizacao: "há 2 dias"
-            }
-        ];
+            mentorias
+        };
+    }
+    static async getMentorshipTemplate(id, mentorId) {
+        const [template] = await db_1.db.select()
+            .from(schema_1.mentorshipTemplates)
+            .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.mentorshipTemplates.id, id), (0, drizzle_orm_1.eq)(schema_1.mentorshipTemplates.mentorId, mentorId)));
+        return template;
+    }
+    static async updateMentorshipTemplate(id, mentorId, data) {
+        const [updated] = await db_1.db.update(schema_1.mentorshipTemplates)
+            .set({
+            ...data,
+            updatedAt: new Date()
+        })
+            .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.mentorshipTemplates.id, id), (0, drizzle_orm_1.eq)(schema_1.mentorshipTemplates.mentorId, mentorId)))
+            .returning();
+        return updated;
     }
     static async createMentee(mentorId, data) {
         // 1. Obter informações do mentor
@@ -192,6 +308,12 @@ class MentorService {
             mentorId: mentorId,
             statusPrograma: 'active'
         }).returning();
+        // 4.5. Vincular o usuário de contato à Empresa
+        await db_1.db.insert(schema_1.companyUsers).values({
+            companyId: newCompany.id,
+            userId: user.id,
+            papelNoCaso: 'contato',
+        });
         // 5. Criar a Jornada Inicial
         await db_1.db.insert(schema_1.journeys).values({
             companyId: newCompany.id,
@@ -203,6 +325,103 @@ class MentorService {
             console.error('Falha ao enviar boas-vindas mentorado:', err);
         });
         return { success: true, companyId: newCompany.id };
+    }
+    static async getAlunoDetails(mentorId, alunoId) {
+        // 1. Get company
+        const [company] = await db_1.db.select().from(schema_1.companies).where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.companies.id, alunoId), (0, drizzle_orm_1.eq)(schema_1.companies.mentorId, mentorId)));
+        if (!company)
+            throw new Error('aluno_not_found');
+        // 2. Get the associated contact user via companyUsers
+        const [companyUserLink] = await db_1.db.select().from(schema_1.companyUsers).where((0, drizzle_orm_1.eq)(schema_1.companyUsers.companyId, company.id));
+        let contatoInfo = { nome: "Sem Contato", email: "-", telefone: "-" };
+        if (companyUserLink) {
+            const [user] = await db_1.db.select().from(schema_1.users).where((0, drizzle_orm_1.eq)(schema_1.users.id, companyUserLink.userId));
+            if (user) {
+                contatoInfo = {
+                    nome: user.fullName,
+                    email: user.email,
+                    telefone: user.phone || "-"
+                };
+            }
+        }
+        // 3. Get the journeys (matriculas)
+        const matriculasList = await db_1.db.select({
+            id: schema_1.journeys.id,
+            templateId: schema_1.journeys.templateId,
+            status: schema_1.companies.statusPrograma,
+            createdAt: schema_1.journeys.createdAt
+        }).from(schema_1.journeys).where((0, drizzle_orm_1.eq)(schema_1.journeys.companyId, company.id));
+        const matriculas = matriculasList.map(m => ({
+            id: m.id,
+            turmaNome: m.createdAt ? `Turma ${m.createdAt.toLocaleDateString()}` : "Nova Turma",
+            produtoNome: m.templateId || "Mentoria Padrão",
+            status: m.status === 'active' ? 'Ativo' : (m.status === 'paused' ? 'Pausado' : 'Concluído')
+        }));
+        // 4. Get modules for the active/first journey
+        let modulesList = [];
+        if (matriculasList.length > 0) {
+            const activeJourney = matriculasList[0];
+            modulesList = await db_1.db.select().from(schema_1.modules).where((0, drizzle_orm_1.eq)(schema_1.modules.journeyId, activeJourney.id)).orderBy(schema_1.modules.ordem);
+        }
+        const steps = modulesList.map(mod => ({
+            id: mod.id,
+            title: mod.titulo,
+            status: mod.status === 'active' ? 'current' : mod.status // maps from 'locked', 'active', 'completed' to 'locked', 'current', 'completed'
+        }));
+        return {
+            id: company.id,
+            empresa: company.nome,
+            contato: contatoInfo.nome,
+            email: contatoInfo.email,
+            telefone: contatoInfo.telefone,
+            statusGlobal: company.statusPrograma === 'active' ? 'Ativo' : (company.statusPrograma === 'paused' ? 'Pausado' : 'Alumni'),
+            matriculas,
+            steps
+        };
+    }
+    static async getMentoresDisponiveis() {
+        const mentores = await db_1.db.select({
+            id: schema_1.users.id,
+            nome: schema_1.users.fullName,
+        }).from(schema_1.users)
+            .innerJoin(schema_1.roles, (0, drizzle_orm_1.eq)(schema_1.users.roleId, schema_1.roles.id))
+            .where((0, drizzle_orm_1.eq)(schema_1.roles.name, 'MENTOR'));
+        return mentores.map(m => m.nome);
+    }
+    static async createTurma(mentorId, data) {
+        // Obter os IDs dos mentores com base nos nomes passados
+        // Se a API estivesse passando IDs, seria mais fácil, mas para manter o fluxo atual do Combobox que passa nomes:
+        let mentorIds = [];
+        if (data.mentores && data.mentores.length > 0) {
+            const dbMentores = await db_1.db.select({ id: schema_1.users.id, fullName: schema_1.users.fullName })
+                .from(schema_1.users)
+                .innerJoin(schema_1.roles, (0, drizzle_orm_1.eq)(schema_1.users.roleId, schema_1.roles.id))
+                .where((0, drizzle_orm_1.eq)(schema_1.roles.name, 'MENTOR'));
+            mentorIds = data.mentores.map((nome) => {
+                const found = dbMentores.find(m => m.fullName === nome);
+                return found ? found.id : null;
+            }).filter(Boolean);
+        }
+        // Criar a Turma
+        const [novaTurma] = await db_1.db.insert(schema_1.turmas).values({
+            nome: data.nome,
+            descricao: data.descricao,
+            templateId: data.templateId,
+            preco: data.preco ? data.preco.toString() : '0',
+            dataInicio: data.dataInicio ? new Date(data.dataInicio) : null,
+            vagas: data.vagas ? parseInt(data.vagas, 10) : null,
+            mentorId: mentorId,
+            status: 'ativa'
+        }).returning();
+        // Vincular mentores alocados à turma
+        if (mentorIds.length > 0) {
+            const insertData = mentorIds.map(mId => ({
+                turmaId: novaTurma.id,
+                mentorId: mId
+            }));
+            await db_1.db.insert(schema_1.turmaMentores).values(insertData);
+        }
+        return { success: true, turmaId: novaTurma.id };
     }
 }
 exports.MentorService = MentorService;

@@ -100,7 +100,7 @@ export const companies = pgTable('companies', {
     createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
-// 9. Company Users (Many-to-Many relationship between Users and Companies)
+// 9. Company Users
 export const companyUsers = pgTable('company_users', {
     id: uuid('id').primaryKey().defaultRandom(),
     companyId: uuid('company_id').references(() => companies.id, { onDelete: 'cascade' }).notNull(),
@@ -108,17 +108,18 @@ export const companyUsers = pgTable('company_users', {
     papelNoCaso: text('papel_no_caso'), // socio, gestor, financeiro
 });
 
-// 10. Journeys (Mentorship track instances per company)
+// 10. Journeys
 export const journeys = pgTable('journeys', {
     id: uuid('id').primaryKey().defaultRandom(),
     companyId: uuid('company_id').references(() => companies.id, { onDelete: 'cascade' }).notNull(),
+    turmaId: uuid('turma_id').references(() => turmas.id, { onDelete: 'set null' }),
     templateId: text('template_id'),
     etapaAtual: text('etapa_atual'),
     progresso: integer('progresso').default(0), // 0 to 100
     createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
-// 11. Modules (Steps of the journey)
+// 11. Modules
 export const modules = pgTable('modules', {
     id: uuid('id').primaryKey().defaultRandom(),
     journeyId: uuid('journey_id').references(() => journeys.id, { onDelete: 'cascade' }).notNull(),
@@ -235,6 +236,45 @@ export const mentorshipTemplates = pgTable('mentorship_templates', {
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
 
+// 22. Turmas (Cohorts)
+export const turmas = pgTable('turmas', {
+    id: uuid('id').primaryKey().defaultRandom(),
+    nome: text('nome').notNull(),
+    descricao: text('descricao'),
+    templateId: uuid('template_id').references(() => mentorshipTemplates.id),
+    preco: decimal('preco', { precision: 10, scale: 2 }),
+    dataInicio: timestamp('data_inicio'),
+    vagas: integer('vagas'),
+    status: text('status').default('planejada'), // planejada, ativa, concluida
+    mentorId: uuid('mentor_id').references(() => users.id),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+// 23. Turma Mentores (N:N)
+// 24. Mentorship Template Modules (Blueprints)
+export const mentorshipTemplateModules = pgTable('mentorship_template_modules', {
+    id: uuid('id').primaryKey().defaultRandom(),
+    templateId: uuid('template_id').references(() => mentorshipTemplates.id, { onDelete: 'cascade' }).notNull(),
+    ordem: integer('ordem').notNull(),
+    titulo: text('titulo').notNull(),
+    objetivoMacro: text('objetivo_macro'),
+});
+
+// 25. Mentorship Template Objectives (Blueprints)
+export const mentorshipTemplateObjectives = pgTable('mentorship_template_objectives', {
+    id: uuid('id').primaryKey().defaultRandom(),
+    moduleId: uuid('module_id').references(() => mentorshipTemplateModules.id, { onDelete: 'cascade' }).notNull(),
+    descricao: text('descricao').notNull(),
+    ordem: integer('ordem').notNull(),
+});
+
+
+export const turmaMentores = pgTable('turma_mentores', {
+    id: uuid('id').primaryKey().defaultRandom(),
+    turmaId: uuid('turma_id').references(() => turmas.id, { onDelete: 'cascade' }).notNull(),
+    mentorId: uuid('mentor_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+});
+
 // Relacionamentos
 
 export const componentsRelations = relations(companies, ({ one, many }) => ({
@@ -339,8 +379,29 @@ export const announcementsRelations = relations(announcements, ({ one }) => ({
     author: one(users, { fields: [announcements.authorId], references: [users.id] }),
 }));
 
-export const mentorshipTemplatesRelations = relations(mentorshipTemplates, ({ one }) => ({
+export const mentorshipTemplatesRelations = relations(mentorshipTemplates, ({ one, many }) => ({
     mentor: one(users, { fields: [mentorshipTemplates.mentorId], references: [users.id] }),
+    modules: many(mentorshipTemplateModules),
+}));
+
+export const turmasRelations = relations(turmas, ({ one, many }) => ({
+    template: one(mentorshipTemplates, { fields: [turmas.templateId], references: [mentorshipTemplates.id] }),
+    mentor: one(users, { fields: [turmas.mentorId], references: [users.id] }),
+    mentoresAlocados: many(turmaMentores),
+}));
+
+export const turmaMentoresRelations = relations(turmaMentores, ({ one }) => ({
+    turma: one(turmas, { fields: [turmaMentores.turmaId], references: [turmas.id] }),
+    mentor: one(users, { fields: [turmaMentores.mentorId], references: [users.id] }),
+}));
+
+export const mentorshipTemplateModulesRelations = relations(mentorshipTemplateModules, ({ many, one }) => ({
+    template: one(mentorshipTemplates, { fields: [mentorshipTemplateModules.templateId], references: [mentorshipTemplates.id] }),
+    objectives: many(mentorshipTemplateObjectives),
+}));
+
+export const mentorshipTemplateObjectivesRelations = relations(mentorshipTemplateObjectives, ({ one }) => ({
+    module: one(mentorshipTemplateModules, { fields: [mentorshipTemplateObjectives.moduleId], references: [mentorshipTemplateModules.id] }),
 }));
 
 // Tipagens - Exportando com InferSelectModel e InferInsertModel
@@ -404,3 +465,15 @@ export type NewAnnouncement = InferInsertModel<typeof announcements>;
 
 export type MentorshipTemplate = InferSelectModel<typeof mentorshipTemplates>;
 export type NewMentorshipTemplate = InferInsertModel<typeof mentorshipTemplates>;
+
+export type Turma = InferSelectModel<typeof turmas>;
+export type NewTurma = InferInsertModel<typeof turmas>;
+
+export type TurmaMentor = InferSelectModel<typeof turmaMentores>;
+export type NewTurmaMentor = InferInsertModel<typeof turmaMentores>;
+
+export type MentorshipTemplateModule = InferSelectModel<typeof mentorshipTemplateModules>;
+export type NewMentorshipTemplateModule = InferInsertModel<typeof mentorshipTemplateModules>;
+
+export type MentorshipTemplateObjective = InferSelectModel<typeof mentorshipTemplateObjectives>;
+export type NewMentorshipTemplateObjective = InferInsertModel<typeof mentorshipTemplateObjectives>;

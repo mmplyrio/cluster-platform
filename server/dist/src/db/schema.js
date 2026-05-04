@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.actionPlanItemsRelations = exports.indicatorsRelations = exports.commentsRelations = exports.deliverablesRelations = exports.tasksRelations = exports.modulesRelations = exports.journeysRelations = exports.companyUsersRelations = exports.usersRelations = exports.rolesRelations = exports.appointmentsRelations = exports.funnelEventsRelations = exports.scoresRelations = exports.responsesRelations = exports.leadsRelations = exports.componentsRelations = exports.actionPlanItems = exports.indicators = exports.comments = exports.deliverables = exports.tasks = exports.modules = exports.journeys = exports.companyUsers = exports.companies = exports.users = exports.roles = exports.appointments = exports.funnelEvents = exports.scores = exports.responses = exports.leads = void 0;
+exports.turmaMentoresRelations = exports.turmasRelations = exports.mentorshipTemplatesRelations = exports.announcementsRelations = exports.messagesRelations = exports.conversationParticipantsRelations = exports.conversationsRelations = exports.actionPlanItemsRelations = exports.indicatorsRelations = exports.commentsRelations = exports.deliverablesRelations = exports.tasksRelations = exports.modulesRelations = exports.journeysRelations = exports.companyUsersRelations = exports.usersRelations = exports.rolesRelations = exports.appointmentsRelations = exports.funnelEventsRelations = exports.scoresRelations = exports.responsesRelations = exports.leadsRelations = exports.componentsRelations = exports.turmaMentores = exports.turmas = exports.mentorshipTemplates = exports.announcements = exports.messages = exports.conversationParticipants = exports.conversations = exports.actionPlanItems = exports.indicators = exports.comments = exports.deliverables = exports.tasks = exports.modules = exports.journeys = exports.companyUsers = exports.companies = exports.users = exports.roles = exports.appointments = exports.funnelEvents = exports.scores = exports.responses = exports.leads = void 0;
 const pg_core_1 = require("drizzle-orm/pg-core");
 const drizzle_orm_1 = require("drizzle-orm");
 // 1. Leads
@@ -172,6 +172,69 @@ exports.actionPlanItems = (0, pg_core_1.pgTable)('action_plan_items', {
     prazo: (0, pg_core_1.timestamp)('prazo'),
     status: (0, pg_core_1.text)('status').default('pending'), // pending, done
 });
+// 17. Conversations (Inbox)
+exports.conversations = (0, pg_core_1.pgTable)('conversations', {
+    id: (0, pg_core_1.uuid)('id').primaryKey().defaultRandom(),
+    titulo: (0, pg_core_1.text)('titulo'), // Nome do grupo ou null para individual
+    tipo: (0, pg_core_1.text)('tipo').notNull().default('INDIVIDUAL'), // INDIVIDUAL, GRUPO
+    createdAt: (0, pg_core_1.timestamp)('created_at').defaultNow().notNull(),
+});
+// 18. Conversation Participants
+exports.conversationParticipants = (0, pg_core_1.pgTable)('conversation_participants', {
+    id: (0, pg_core_1.uuid)('id').primaryKey().defaultRandom(),
+    conversationId: (0, pg_core_1.uuid)('conversation_id').references(() => exports.conversations.id, { onDelete: 'cascade' }).notNull(),
+    userId: (0, pg_core_1.uuid)('user_id').references(() => exports.users.id, { onDelete: 'cascade' }).notNull(),
+    joinedAt: (0, pg_core_1.timestamp)('joined_at').defaultNow().notNull(),
+});
+// 19. Messages
+exports.messages = (0, pg_core_1.pgTable)('messages', {
+    id: (0, pg_core_1.uuid)('id').primaryKey().defaultRandom(),
+    conversationId: (0, pg_core_1.uuid)('conversation_id').references(() => exports.conversations.id, { onDelete: 'cascade' }).notNull(),
+    senderId: (0, pg_core_1.uuid)('sender_id').references(() => exports.users.id, { onDelete: 'cascade' }).notNull(),
+    content: (0, pg_core_1.text)('content').notNull(),
+    isRead: (0, pg_core_1.boolean)('is_read').default(false).notNull(),
+    createdAt: (0, pg_core_1.timestamp)('created_at').defaultNow().notNull(),
+});
+// 20. Announcements (Broadcasts)
+exports.announcements = (0, pg_core_1.pgTable)('announcements', {
+    id: (0, pg_core_1.uuid)('id').primaryKey().defaultRandom(),
+    title: (0, pg_core_1.text)('title').notNull(),
+    content: (0, pg_core_1.text)('content').notNull(),
+    category: (0, pg_core_1.text)('category').default('info'), // info, urgent, success
+    targetType: (0, pg_core_1.text)('target_type').notNull(), // 'all', 'specific_companies'
+    authorId: (0, pg_core_1.uuid)('author_id').references(() => exports.users.id, { onDelete: 'cascade' }).notNull(),
+    createdAt: (0, pg_core_1.timestamp)('created_at').defaultNow().notNull(),
+});
+// 21. Mentorship Templates (Products)
+exports.mentorshipTemplates = (0, pg_core_1.pgTable)('mentorship_templates', {
+    id: (0, pg_core_1.uuid)('id').primaryKey().defaultRandom(),
+    mentorId: (0, pg_core_1.uuid)('mentor_id').references(() => exports.users.id, { onDelete: 'cascade' }).notNull(),
+    titulo: (0, pg_core_1.text)('titulo').notNull(),
+    descricao: (0, pg_core_1.text)('descricao'),
+    status: (0, pg_core_1.text)('status').default('Ativo'), // Ativo, Rascunho, Arquivado
+    preco: (0, pg_core_1.decimal)('preco', { precision: 10, scale: 2 }).default('0'),
+    createdAt: (0, pg_core_1.timestamp)('created_at').defaultNow().notNull(),
+    updatedAt: (0, pg_core_1.timestamp)('updated_at').defaultNow().notNull(),
+});
+// 22. Turmas (Cohorts)
+exports.turmas = (0, pg_core_1.pgTable)('turmas', {
+    id: (0, pg_core_1.uuid)('id').primaryKey().defaultRandom(),
+    nome: (0, pg_core_1.text)('nome').notNull(),
+    descricao: (0, pg_core_1.text)('descricao'),
+    templateId: (0, pg_core_1.uuid)('template_id').references(() => exports.mentorshipTemplates.id),
+    preco: (0, pg_core_1.decimal)('preco', { precision: 10, scale: 2 }),
+    dataInicio: (0, pg_core_1.timestamp)('data_inicio'),
+    vagas: (0, pg_core_1.integer)('vagas'),
+    status: (0, pg_core_1.text)('status').default('planejada'), // planejada, ativa, concluida
+    mentorId: (0, pg_core_1.uuid)('mentor_id').references(() => exports.users.id),
+    createdAt: (0, pg_core_1.timestamp)('created_at').defaultNow().notNull(),
+});
+// 23. Turma Mentores (N:N)
+exports.turmaMentores = (0, pg_core_1.pgTable)('turma_mentores', {
+    id: (0, pg_core_1.uuid)('id').primaryKey().defaultRandom(),
+    turmaId: (0, pg_core_1.uuid)('turma_id').references(() => exports.turmas.id, { onDelete: 'cascade' }).notNull(),
+    mentorId: (0, pg_core_1.uuid)('mentor_id').references(() => exports.users.id, { onDelete: 'cascade' }).notNull(),
+});
 // Relacionamentos
 exports.componentsRelations = (0, drizzle_orm_1.relations)(exports.companies, ({ one, many }) => ({
     lead: one(exports.leads, { fields: [exports.companies.leadId], references: [exports.leads.id] }),
@@ -239,4 +302,31 @@ exports.indicatorsRelations = (0, drizzle_orm_1.relations)(exports.indicators, (
 }));
 exports.actionPlanItemsRelations = (0, drizzle_orm_1.relations)(exports.actionPlanItems, ({ one }) => ({
     company: one(exports.companies, { fields: [exports.actionPlanItems.companyId], references: [exports.companies.id] }),
+}));
+exports.conversationsRelations = (0, drizzle_orm_1.relations)(exports.conversations, ({ many }) => ({
+    participants: many(exports.conversationParticipants),
+    messages: many(exports.messages),
+}));
+exports.conversationParticipantsRelations = (0, drizzle_orm_1.relations)(exports.conversationParticipants, ({ one }) => ({
+    conversation: one(exports.conversations, { fields: [exports.conversationParticipants.conversationId], references: [exports.conversations.id] }),
+    user: one(exports.users, { fields: [exports.conversationParticipants.userId], references: [exports.users.id] }),
+}));
+exports.messagesRelations = (0, drizzle_orm_1.relations)(exports.messages, ({ one }) => ({
+    conversation: one(exports.conversations, { fields: [exports.messages.conversationId], references: [exports.conversations.id] }),
+    sender: one(exports.users, { fields: [exports.messages.senderId], references: [exports.users.id] }),
+}));
+exports.announcementsRelations = (0, drizzle_orm_1.relations)(exports.announcements, ({ one }) => ({
+    author: one(exports.users, { fields: [exports.announcements.authorId], references: [exports.users.id] }),
+}));
+exports.mentorshipTemplatesRelations = (0, drizzle_orm_1.relations)(exports.mentorshipTemplates, ({ one }) => ({
+    mentor: one(exports.users, { fields: [exports.mentorshipTemplates.mentorId], references: [exports.users.id] }),
+}));
+exports.turmasRelations = (0, drizzle_orm_1.relations)(exports.turmas, ({ one, many }) => ({
+    template: one(exports.mentorshipTemplates, { fields: [exports.turmas.templateId], references: [exports.mentorshipTemplates.id] }),
+    mentor: one(exports.users, { fields: [exports.turmas.mentorId], references: [exports.users.id] }),
+    mentoresAlocados: many(exports.turmaMentores),
+}));
+exports.turmaMentoresRelations = (0, drizzle_orm_1.relations)(exports.turmaMentores, ({ one }) => ({
+    turma: one(exports.turmas, { fields: [exports.turmaMentores.turmaId], references: [exports.turmas.id] }),
+    mentor: one(exports.users, { fields: [exports.turmaMentores.mentorId], references: [exports.users.id] }),
 }));

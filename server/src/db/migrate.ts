@@ -9,7 +9,7 @@ const client = postgres(connectionString, { ssl: 'require', prepare: false });
 async function main() {
     console.log('🔄 Aplicando migrações incrementais...');
     
-    const sqlPath = path.join(process.cwd(), 'drizzle', 'mentoria_incremental.sql');
+    const sqlPath = path.join(process.cwd(), 'drizzle', '0002_previous_invaders.sql');
     
     if (!fs.existsSync(sqlPath)) {
         console.error('❌ Arquivo mentoria_incremental.sql não encontrado em /drizzle');

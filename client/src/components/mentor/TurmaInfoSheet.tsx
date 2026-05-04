@@ -71,14 +71,15 @@ export function TurmaInfoSheet({ turma, open, onOpenChange }: TurmaInfoSheetProp
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <Label htmlFor="mentoria">Produto Alvo</Label>
-                                <Select defaultValue={turma.produto || "lucro-estruturado"}>
+                                <Select defaultValue={turma.produto || "nenhum"}>
                                     <SelectTrigger className="w-full">
                                         <SelectValue placeholder="Selecione..." />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="lucro-estruturado">Lucro Estruturado</SelectItem>
-                                        <SelectItem value="maquina-vendas">Máquina de Vendas</SelectItem>
-                                        <SelectItem value="gestao-equipes">Gestão de Equipes</SelectItem>
+                                        {turma.produto && (
+                                            <SelectItem value={turma.produto}>{turma.produto}</SelectItem>
+                                        )}
+                                        <SelectItem value="nenhum">Sem Produto</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
