@@ -1,66 +1,56 @@
 "use client";
 
-import { useState } from "react";
 import { Plus, GripVertical, Trash2, CheckSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-// Tipagem da estrutura (Este é o JSON que será salvo no Banco de Dados)
 interface Objetivo {
-    id: string;
+    id?: string;
     descricao: string;
 }
 
 interface Modulo {
-    id: string;
+    id?: string;
     titulo: string;
     objetivoMacro: string;
-    objetivosAlocados: Objetivo[];
+    objectives: Objetivo[];
 }
 
-export function TrackBuilder() {
-    // Começamos com um módulo de exemplo
-    const [modulos, setModulos] = useState<Modulo[]>([
-        {
-            id: "mod-1",
-            titulo: "1. Diagnosticar",
-            objetivoMacro: "Análise situacional e saúde financeira.",
-            objetivosAlocados: [
-                { id: "obj-1", descricao: "Mapear todas as contas bancárias" },
-                { id: "obj-2", descricao: "Listar passivos e dívidas ativas" }
-            ]
-        }
-    ]);
+interface TrackBuilderProps {
+    modulos: Modulo[];
+    setModulos: (modulos: Modulo[]) => void;
+}
 
+export function TrackBuilder({ modulos, setModulos }: TrackBuilderProps) {
     // Função para adicionar um novo Módulo vazio
     const adicionarModulo = () => {
         const novoModulo: Modulo = {
-            id: `mod-${Date.now()}`,
+            id: `new-${Date.now()}`,
             titulo: `Novo Módulo ${modulos.length + 1}`,
             objetivoMacro: "",
-            objetivosAlocados: []
+            objectives: []
         };
         setModulos([...modulos, novoModulo]);
     };
 
     // Função para remover um Módulo
-    const removerModulo = (idModulo: string) => {
-        setModulos(modulos.filter(m => m.id !== idModulo));
+    const removerModulo = (id: string) => {
+        setModulos(modulos.filter(m => (m.id || m.titulo) !== id));
     };
 
     // Função para atualizar textos do Módulo
-    const atualizarModulo = (idModulo: string, campo: keyof Modulo, valor: string) => {
-        setModulos(modulos.map(m => m.id === idModulo ? { ...m, [campo]: valor } : m));
+    const atualizarModulo = (id: string, campo: keyof Modulo, valor: string) => {
+        setModulos(modulos.map(m => (m.id || m.titulo) === id ? { ...m, [campo]: valor } : m));
     };
 
     // Função para adicionar Objetivo dentro de um Módulo específico
     const adicionarObjetivo = (idModulo: string) => {
         setModulos(modulos.map(m => {
-            if (m.id === idModulo) {
+            if ((m.id || m.titulo) === idModulo) {
                 return {
                     ...m,
-                    objetivosAlocados: [...m.objetivosAlocados, { id: `obj-${Date.now()}`, descricao: "" }]
+                    objectives: [...m.objectives, { descricao: "" }]
                 };
             }
             return m;
@@ -68,14 +58,14 @@ export function TrackBuilder() {
     };
 
     // Função para atualizar texto de um Objetivo
-    const atualizarObjetivo = (idModulo: string, idObjetivo: string, valor: string) => {
+    const atualizarObjetivo = (idModulo: string, indexObjetivo: number, valor: string) => {
         setModulos(modulos.map(m => {
-            if (m.id === idModulo) {
+            if ((m.id || m.titulo) === idModulo) {
+                const newObjectives = [...m.objectives];
+                newObjectives[indexObjetivo] = { ...newObjectives[indexObjetivo], descricao: valor };
                 return {
                     ...m,
-                    objetivosAlocados: m.objetivosAlocados.map(obj =>
-                        obj.id === idObjetivo ? { ...obj, descricao: valor } : obj
-                    )
+                    objectives: newObjectives
                 };
             }
             return m;
@@ -83,12 +73,12 @@ export function TrackBuilder() {
     };
 
     // Função para remover Objetivo
-    const removerObjetivo = (idModulo: string, idObjetivo: string) => {
+    const removerObjetivo = (idModulo: string, indexObjetivo: number) => {
         setModulos(modulos.map(m => {
-            if (m.id === idModulo) {
+            if ((m.id || m.titulo) === idModulo) {
                 return {
                     ...m,
-                    objetivosAlocados: m.objetivosAlocados.filter(obj => obj.id !== idObjetivo)
+                    objectives: m.objectives.filter((_, idx) => idx !== indexObjetivo)
                 };
             }
             return m;
@@ -106,13 +96,13 @@ export function TrackBuilder() {
 
             <div className="space-y-6">
                 {modulos.map((modulo, index) => (
-                    <div key={modulo.id} className="border border-slate-200 rounded-xl p-5 bg-slate-50/50 relative group">
+                    <div key={modulo.id || index} className="border border-slate-200 rounded-xl p-5 bg-slate-50/50 relative group">
 
                         {/* AÇÕES DO MÓDULO (Lixeira) */}
                         <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => removerModulo(modulo.id)}
+                            onClick={() => removerModulo(modulo.id || modulo.titulo)}
                             className="absolute top-4 right-4 text-slate-400 hover:text-red-500 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-opacity"
                         >
                             <Trash2 className="w-4 h-4" />
@@ -123,7 +113,7 @@ export function TrackBuilder() {
                                 <Label className="text-[#f84f08] font-bold">Título do Módulo</Label>
                                 <Input
                                     value={modulo.titulo}
-                                    onChange={(e) => atualizarModulo(modulo.id, "titulo", e.target.value)}
+                                    onChange={(e) => atualizarModulo(modulo.id || modulo.titulo, "titulo", e.target.value)}
                                     className="bg-white font-bold"
                                 />
                             </div>
@@ -131,7 +121,7 @@ export function TrackBuilder() {
                                 <Label>Objetivo Macro (Descrição Breve)</Label>
                                 <Input
                                     value={modulo.objetivoMacro}
-                                    onChange={(e) => atualizarModulo(modulo.id, "objetivoMacro", e.target.value)}
+                                    onChange={(e) => atualizarModulo(modulo.id || modulo.titulo, "objetivoMacro", e.target.value)}
                                     placeholder="Ex: Estruturação de processos e fluxos..."
                                     className="bg-white"
                                 />
@@ -145,19 +135,19 @@ export function TrackBuilder() {
                             </h4>
 
                             <div className="space-y-2">
-                                {modulo.objetivosAlocados.map((objetivo) => (
-                                    <div key={objetivo.id} className="flex items-center gap-2">
+                                {modulo.objectives.map((objetivo, objIndex) => (
+                                    <div key={objIndex} className="flex items-center gap-2">
                                         <GripVertical className="w-4 h-4 text-slate-300 cursor-move" />
                                         <Input
                                             value={objetivo.descricao}
-                                            onChange={(e) => atualizarObjetivo(modulo.id, objetivo.id, e.target.value)}
+                                            onChange={(e) => atualizarObjetivo(modulo.id || modulo.titulo, objIndex, e.target.value)}
                                             placeholder="Digite uma meta acionável. Ex: Mapear fornecedores."
                                             className="h-8 text-sm bg-slate-50 border-slate-200"
                                         />
                                         <Button
                                             variant="ghost"
                                             size="icon"
-                                            onClick={() => removerObjetivo(modulo.id, objetivo.id)}
+                                            onClick={() => removerObjetivo(modulo.id || modulo.titulo, objIndex)}
                                             className="h-8 w-8 text-slate-400 hover:text-red-500 shrink-0"
                                         >
                                             <Trash2 className="w-3.5 h-3.5" />
@@ -168,7 +158,7 @@ export function TrackBuilder() {
                                 <Button
                                     variant="outline"
                                     size="sm"
-                                    onClick={() => adicionarObjetivo(modulo.id)}
+                                    onClick={() => adicionarObjetivo(modulo.id || modulo.titulo)}
                                     className="w-full mt-2 border-dashed border-slate-300 text-slate-500 hover:text-[#f84f08] hover:border-[#f84f08]/50"
                                 >
                                     <Plus className="w-3 h-3 mr-2" /> Adicionar Novo Objetivo
@@ -187,4 +177,4 @@ export function TrackBuilder() {
             </Button>
         </div>
     );
-}
+}

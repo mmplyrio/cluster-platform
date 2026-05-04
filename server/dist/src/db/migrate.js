@@ -11,7 +11,7 @@ const connectionString = (process.env.DATABASE_URL || '').replace(/%(?![0-9a-fA-
 const client = (0, postgres_1.default)(connectionString, { ssl: 'require', prepare: false });
 async function main() {
     console.log('🔄 Aplicando migrações incrementais...');
-    const sqlPath = path_1.default.join(process.cwd(), 'drizzle', 'mentoria_incremental.sql');
+    const sqlPath = path_1.default.join(process.cwd(), 'drizzle', '0001_wakeful_colleen_wing.sql');
     if (!fs_1.default.existsSync(sqlPath)) {
         console.error('❌ Arquivo mentoria_incremental.sql não encontrado em /drizzle');
         process.exit(1);

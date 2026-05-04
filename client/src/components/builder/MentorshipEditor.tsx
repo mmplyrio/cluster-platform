@@ -18,6 +18,7 @@ export default function MentorshipEditor({ initialData, builderId }: { initialDa
     const [descricao, setDescricao] = useState(initialData.descricao || "");
     const [preco, setPreco] = useState(initialData.preco || "");
     const [status, setStatus] = useState(initialData.status);
+    const [modulos, setModulos] = useState(initialData.modules || []);
     const [activeTab, setActiveTab] = useState<TabId>("geral");
     const [loading, setLoading] = useState(false);
     const router = useRouter();
@@ -36,7 +37,8 @@ export default function MentorshipEditor({ initialData, builderId }: { initialDa
                 titulo,
                 descricao,
                 preco,
-                status
+                status,
+                modules: modulos
             });
             if (res.success) {
                 alert("Mentoria atualizada com sucesso!");
@@ -131,7 +133,7 @@ export default function MentorshipEditor({ initialData, builderId }: { initialDa
                         setPreco={setPreco}
                     />
                 )}
-                {activeTab === "trilha" && <TrackBuilder />}
+                {activeTab === "trilha" && <TrackBuilder modulos={modulos} setModulos={setModulos} />}
                 {activeTab === "plano" && <ActionPlanBuilder />}
                 {activeTab === "prontuario" && <DiagnosticBuilder />}
             </main>

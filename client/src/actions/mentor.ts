@@ -95,6 +95,28 @@ export async function updateMentorshipTemplateAction(id: string, data: any) {
     }
 }
 
+export async function createMentorshipTemplateAction(data: any) {
+    const API_URL = getApiUrl();
+    try {
+        const headers = await getAuthHeaders();
+        const res = await fetch(`${API_URL}/mentor/builder`, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify(data)
+        });
+
+        if (!res.ok) {
+            const error = await res.json();
+            return { success: false, error: error.error || 'Falha ao criar template' };
+        }
+
+        return await res.json();
+    } catch (error) {
+        console.error('Erro ao criar template:', error);
+        return { success: false, error: 'Erro de comunicação com o servidor' };
+    }
+}
+
 export async function getBuilderDataAction() {
     const API_URL = getApiUrl();
     try {
@@ -110,5 +132,103 @@ export async function getBuilderDataAction() {
     } catch (error) {
         console.error('Erro ao buscar builder data:', error);
         return { stats: null, mentorias: [] };
+    }
+}
+
+export async function getAlunoDetailsAction(id: string) {
+    const API_URL = getApiUrl();
+    try {
+        const headers = await getAuthHeaders();
+        const res = await fetch(`${API_URL}/mentor/alunos/${id}`, {
+            headers,
+            cache: 'no-store'
+        });
+
+        if (!res.ok) return null;
+        const json = await res.json();
+        return json.success ? json.data : null;
+    } catch (error) {
+        console.error('Erro ao buscar detalhes do aluno:', error);
+        return null;
+    }
+}
+
+export async function getMentoresDisponiveisAction() {
+    const API_URL = getApiUrl();
+    try {
+        const headers = await getAuthHeaders();
+        const res = await fetch(`${API_URL}/mentor/mentores`, {
+            headers,
+            cache: 'no-store'
+        });
+
+        if (!res.ok) return [];
+        const json = await res.json();
+        return json.success ? json.data : [];
+    } catch (error) {
+        console.error('Erro ao buscar mentores:', error);
+        return [];
+    }
+}
+
+export async function createTurmaAction(data: any) {
+    const API_URL = getApiUrl();
+    try {
+        const headers = await getAuthHeaders();
+        const res = await fetch(`${API_URL}/mentor/turmas`, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify(data)
+        });
+
+        if (!res.ok) {
+            const error = await res.json();
+            return { success: false, error: error.error || 'Falha ao criar turma' };
+        }
+
+        return await res.json();
+    } catch (error) {
+        console.error('Erro ao criar turma:', error);
+        return { success: false, error: 'Erro de comunicação com o servidor' };
+    }
+}
+
+export async function addAlunoToTurmaAction(turmaId: string, data: any) {
+    const API_URL = getApiUrl();
+    try {
+        const headers = await getAuthHeaders();
+        const res = await fetch(`${API_URL}/mentor/turmas/${turmaId}/alunos`, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify(data)
+        });
+
+        if (!res.ok) {
+            const error = await res.json();
+            return { success: false, error: error.error || 'Falha ao vincular aluno' };
+        }
+
+        return await res.json();
+    } catch (error) {
+        console.error('Erro ao vincular aluno:', error);
+        return { success: false, error: 'Erro de comunicação com o servidor' };
+    }
+}
+
+export async function getAlunosAction() {
+    const API_URL = getApiUrl();
+    try {
+        const headers = await getAuthHeaders();
+        const res = await fetch(`${API_URL}/mentor/alunos`, {
+            headers,
+            cache: 'no-store'
+        });
+
+        if (!res.ok) return null;
+        const json = await res.json();
+        return json.success ? json.data : null;
+    } catch (error) {
+        console.error('Erro ao buscar alunos:', error);
+        return null;
     }
 }

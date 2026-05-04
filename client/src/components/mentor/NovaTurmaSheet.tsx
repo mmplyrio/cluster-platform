@@ -36,16 +36,27 @@ import {
 import { Textarea } from "../ui/textarea";
 
 import { useEffect } from "react";
-import { getBuilderDataAction } from "@/actions/mentor"; // Need to check if this exists or use getBuilderData
+import { getBuilderDataAction, getMentoresDisponiveisAction, createTurmaAction } from "@/actions/mentor";
 
 export function NovaTurmaSheet() {
     const [open, setOpen] = useState(false);
     const [mentorias, setMentorias] = useState<any[]>([]);
+    const [mentoresDisponiveis, setMentoresDisponiveis] = useState<string[]>([]);
     const anchor = useRef<HTMLDivElement>(null);
+
+    // Form state
+    const [nome, setNome] = useState('');
+    const [descricao, setDescricao] = useState('');
+    const [templateId, setTemplateId] = useState('');
+    const [preco, setPreco] = useState('');
+    const [dataInicio, setDataInicio] = useState('');
+    const [vagas, setVagas] = useState('');
+    const [mentoresAlocados, setMentoresAlocados] = useState<string[]>([]);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     useEffect(() => {
         if (open) {
-            const fetchMentorias = async () => {
+            const fetchData = async () => {
                 const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
                 // Usando a action existente adaptada ou fazendo fetch direto se necessário
                 // Para simplificar, vou assumir que temos uma action que retorna o builder data
@@ -53,23 +64,40 @@ export function NovaTurmaSheet() {
                 if (data && data.mentorias) {
                     setMentorias(data.mentorias.filter((m: any) => m.status === 'Ativo'));
                 }
+
+                // Buscar mentores
+                const mentores = await getMentoresDisponiveisAction();
+                setMentoresDisponiveis(mentores);
             };
-            fetchMentorias();
+            fetchData();
         }
     }, [open]);
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        console.log("Enviando nova turma...");
-        setOpen(false);
-    };
+        setIsSubmitting(true);
+        
+        const payload = {
+            nome,
+            descricao,
+            templateId,
+            preco,
+            dataInicio,
+            vagas,
+            mentores: mentoresAlocados
+        };
 
-    const mentoresDisponiveis = [
-        "Carlos Silva (Financeiro)",
-        "Ana Costa (Vendas)",
-        "João Pedro (Marketing)",
-        "Mariana Santos (Operações)"
-    ];
+        const result = await createTurmaAction(payload);
+        
+        setIsSubmitting(false);
+        if (result && result.success) {
+            setOpen(false);
+            // reset form
+            setNome(''); setDescricao(''); setTemplateId(''); setPreco(''); setDataInicio(''); setVagas(''); setMentoresAlocados([]);
+        } else {
+            alert(result?.error || "Erro ao criar turma");
+        }
+    };
 
     return (
         <Sheet open={open} onOpenChange={setOpen}>
@@ -98,19 +126,19 @@ export function NovaTurmaSheet() {
 
                         <div className="space-y-2">
                             <Label htmlFor="nome">Nome da Turma</Label>
-                            <Input id="nome" placeholder="Ex: Turma Agosto 2026" required />
+                            <Input id="nome" value={nome} onChange={e => setNome(e.target.value)} placeholder="Ex: Turma Agosto 2026" required />
                         </div>
 
                         <div className="space-y-2">
                             <Label htmlFor="descricao">Descrição</Label>
-                            <Textarea id="descricao" placeholder="Ex: Descrição da turma" required />
+                            <Textarea id="descricao" value={descricao} onChange={e => setDescricao(e.target.value)} placeholder="Ex: Descrição da turma" required />
                         </div>
 
                         {/* Agrupei Produto e Preço na mesma linha (faz sentido estarem juntos) */}
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <Label htmlFor="mentoria">Produto Alvo</Label>
-                                <Select required>
+                                <Select required value={templateId} onValueChange={setTemplateId}>
                                     <SelectTrigger className="w-full">
                                         <SelectValue placeholder="Selecione..." />
                                     </SelectTrigger>
@@ -128,7 +156,7 @@ export function NovaTurmaSheet() {
 
                             <div className="space-y-2">
                                 <Label htmlFor="preco">Valor de Venda (R$)</Label>
-                                <Input id="preco" type="number" placeholder="Ex: 5000,00" required />
+                                <Input id="preco" value={preco} onChange={e => setPreco(e.target.value)} type="number" placeholder="Ex: 5000,00" required />
                             </div>
                         </div>
                     </div>
@@ -146,6 +174,8 @@ export function NovaTurmaSheet() {
                                 multiple
                                 autoHighlight
                                 items={mentoresDisponiveis}
+                                value={mentoresAlocados}
+                                onValueChange={(val: any) => setMentoresAlocados(val)}
                             >
                                 <ComboboxChips ref={anchor} className="w-full">
                                     <ComboboxValue>
@@ -187,22 +217,22 @@ export function NovaTurmaSheet() {
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <Label htmlFor="data">Data de Início</Label>
-                                <Input id="data" type="date" required className="text-slate-600" />
+                                <Input id="data" value={dataInicio} onChange={e => setDataInicio(e.target.value)} type="date" required className="text-slate-600" />
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="vagas">Vagas Disponíveis</Label>
-                                <Input id="vagas" type="number" placeholder="Ex: 15" required />
+                                <Input id="vagas" value={vagas} onChange={e => setVagas(e.target.value)} type="number" placeholder="Ex: 15" required />
                             </div>
                         </div>
                     </div>
 
                     {/* RODAPÉ */}
                     <SheetFooter className="pt-6 border-t border-slate-100 mt-8">
-                        <Button variant="ghost" type="button" onClick={() => setOpen(false)}>
+                        <Button variant="ghost" type="button" onClick={() => setOpen(false)} disabled={isSubmitting}>
                             Cancelar
                         </Button>
-                        <Button type="submit" className="bg-[#f84f08] hover:bg-[#d94205]">
-                            Criar Turma
+                        <Button type="submit" className="bg-[#f84f08] hover:bg-[#d94205]" disabled={isSubmitting}>
+                            {isSubmitting ? "Criando..." : "Criar Turma"}
                         </Button>
                     </SheetFooter>
                 </form>

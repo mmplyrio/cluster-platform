@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ArrowLeft, Users, CheckCircle, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { StatCard } from "@/components/mentor/StatCard";
-import { TableMentee } from "@/components/mentor/TableMentee";
+import { TableCRM } from "@/components/mentor/TableCRM";
 import { AdicionarAlunoSheet } from "@/components/mentor/NovoAlunoSheet";
 import { NovoAvisoSheet } from "@/components/mentor/NovoAvisoSheet";
 import { getTurmaDetailsAction } from "@/actions/mentor";
@@ -47,7 +47,7 @@ export default async function TurmaDetalhePage({ params }: TurmaDetalheProps) {
 
                 <div className="flex gap-2">
                     <NovoAvisoSheet />
-                    <AdicionarAlunoSheet />
+                    <AdicionarAlunoSheet turmaId={turmaId} />
                 </div>
             </div>
 
@@ -74,7 +74,7 @@ export default async function TurmaDetalhePage({ params }: TurmaDetalheProps) {
             {/* TABELA DE ALUNOS */}
             <div className="mt-8">
                 <h2 className="text-lg font-semibold text-slate-800 mb-4">Empresas Participantes</h2>
-                <TableMentee data={data.alunos} />
+                <TableCRM variant="dashboard" data={data.alunos} />
             </div>
         </div>
     );
