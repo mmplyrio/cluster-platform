@@ -8,8 +8,8 @@ import { Button } from "@/components/ui/button";
 
 import { GeneralInfoBuilder } from "@/components/builder/GeneralInfoBuilder";
 import { TrackBuilder } from "@/components/builder/TrackBuilder";
-import { ActionPlanBuilder } from "@/components/builder/ActionPlanBuilder";
-import { DiagnosticBuilder } from "@/components/builder/DiagnosticBuilder";
+import { DiagnosticBuilder, BlocoDiagnostico } from "@/components/builder/DiagnosticBuilder";
+import { ActionPlanBuilder, EtapaPlano } from "@/components/builder/ActionPlanBuilder";
 import { createMentorshipTemplateAction } from "@/actions/mentor";
 
 type TabId = "geral" | "trilha" | "plano" | "prontuario";
@@ -30,6 +30,26 @@ export default function MentorshipBuilderNovoPage() {
     const [descricao, setDescricao] = useState("");
     const [preco, setPreco] = useState("");
     const [modulos, setModulos] = useState<Modulo[]>([]);
+    const [etapas, setEtapas] = useState<EtapaPlano[]>([
+        { id: "e1", titulo: "0-30 Dias (Emergencial)", descricao: "Ações críticas para estancar sangramentos." },
+        { id: "e2", titulo: "31-60 Dias (Estruturação)", descricao: "Implementação de novos processos." },
+        { id: "e3", titulo: "61-90 Dias (Otimização)", descricao: "Escala e ajustes de margem." }
+    ]);
+    const [blocos, setBlocos] = useState<BlocoDiagnostico[]>([
+        {
+            id: "b1",
+            titulo: "Bloco 1 — Contexto atual do negócio",
+            objetivo: "Entender o momento atual e a percepção do empreendedor sobre os problemas centrais.",
+            perguntas: [
+                {
+                    id: "p1",
+                    texto: "Qual destas situações melhor descreve sua principal preocupação financeira?",
+                    tipo: "multipla_escolha",
+                    opcoes: ["Vender mais", "Sobrar mais dinheiro", "Organizar números"]
+                }
+            ]
+        }
+    ]);
     const [activeTab, setActiveTab] = useState<TabId>("geral");
     const [feedback, setFeedback] = useState<{ type: "success" | "error"; msg: string } | null>(null);
 
@@ -49,12 +69,31 @@ export default function MentorshipBuilderNovoPage() {
         setFeedback(null);
 
         startTransition(async () => {
+            // Unificar todos os dados em módulos para o banco de dados
+            const allModules = [
+                ...modulos.map((m: any) => ({ ...m, tipo: 'trilha' })),
+                ...etapas.map(e => ({ 
+                    titulo: `[Plano] ${e.titulo}`, 
+                    objetivoMacro: e.descricao,
+                    objectives: [],
+                    tipo: 'plano'
+                })),
+                ...blocos.map(b => ({
+                    titulo: `[Diagnóstico] ${b.titulo}`,
+                    objetivoMacro: b.objetivo,
+                    objectives: b.perguntas.map(p => ({
+                        descricao: `${p.texto} | Tipo: ${p.tipo} | Opções: ${p.opcoes?.join(',') || ''}`
+                    })),
+                    tipo: 'diagnostico'
+                }))
+            ];
+
             const result = await createMentorshipTemplateAction({
                 titulo: titulo.trim(),
                 descricao: descricao.trim() || null,
                 preco: preco || "0",
                 status,
-                modules: modulos,
+                modules: allModules,
             });
 
             if (result?.success) {
@@ -158,8 +197,8 @@ export default function MentorshipBuilderNovoPage() {
                 {activeTab === "trilha" && (
                     <TrackBuilder modulos={modulos} setModulos={setModulos} />
                 )}
-                {activeTab === "plano" && <ActionPlanBuilder />}
-                {activeTab === "prontuario" && <DiagnosticBuilder />}
+                {activeTab === "plano" && <ActionPlanBuilder etapas={etapas} setEtapas={setEtapas} />}
+                {activeTab === "prontuario" && <DiagnosticBuilder blocos={blocos} setBlocos={setBlocos} />}
             </main>
         </div>
     );

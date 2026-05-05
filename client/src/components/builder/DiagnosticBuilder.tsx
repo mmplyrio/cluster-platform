@@ -31,29 +31,19 @@ interface Pergunta {
     opcoes?: string[]; // Campo para armazenar as opções de múltipla escolha
 }
 
-interface BlocoDiagnostico {
+export interface BlocoDiagnostico {
     id: string;
     titulo: string;
     objetivo: string;
     perguntas: Pergunta[];
 }
 
-export function DiagnosticBuilder() {
-    const [blocos, setBlocos] = useState<BlocoDiagnostico[]>([
-        {
-            id: "b1",
-            titulo: "Bloco 1 — Contexto atual do negócio",
-            objetivo: "Entender o momento atual e a percepção do empreendedor sobre os problemas centrais.",
-            perguntas: [
-                {
-                    id: "p1",
-                    texto: "Qual destas situações melhor descreve sua principal preocupação financeira?",
-                    tipo: "multipla_escolha",
-                    opcoes: ["Vender mais", "Sobrar mais dinheiro", "Organizar números"]
-                }
-            ]
-        }
-    ]);
+interface DiagnosticBuilderProps {
+    blocos: BlocoDiagnostico[];
+    setBlocos: (blocos: BlocoDiagnostico[]) => void;
+}
+
+export function DiagnosticBuilder({ blocos, setBlocos }: DiagnosticBuilderProps) {
 
     const adicionarBloco = () => {
         const novoBloco: BlocoDiagnostico = {

@@ -6,8 +6,8 @@ import { ArrowLeft, Save, Layout, ListChecks, Target, ClipboardList, PauseCircle
 import { Button } from "@/components/ui/button";
 import { GeneralInfoBuilder } from "@/components/builder/GeneralInfoBuilder";
 import { TrackBuilder } from "@/components/builder/TrackBuilder";
-import { ActionPlanBuilder } from "@/components/builder/ActionPlanBuilder";
-import { DiagnosticBuilder } from "@/components/builder/DiagnosticBuilder";
+import { ActionPlanBuilder, EtapaPlano } from "@/components/builder/ActionPlanBuilder";
+import { DiagnosticBuilder, BlocoDiagnostico } from "@/components/builder/DiagnosticBuilder";
 import { updateMentorshipTemplateAction } from "@/actions/mentor";
 import { useRouter } from "next/navigation";
 
@@ -18,7 +18,42 @@ export default function MentorshipEditor({ initialData, builderId }: { initialDa
     const [descricao, setDescricao] = useState(initialData.descricao || "");
     const [preco, setPreco] = useState(initialData.preco || "");
     const [status, setStatus] = useState(initialData.status);
-    const [modulos, setModulos] = useState(initialData.modules || []);
+    
+    // Separar os módulos por tipo
+    const rawModules = initialData.modules || [];
+    const [modulos, setModulos] = useState(rawModules.filter((m: any) => !m.titulo.startsWith('[Plano]') && !m.titulo.startsWith('[Diagnóstico]')));
+    
+    // De-map Plano de Ação
+    const [etapas, setEtapas] = useState<EtapaPlano[]>(
+        rawModules.filter((m: any) => m.titulo.startsWith('[Plano]')).map((m: any) => ({
+            id: m.id,
+            titulo: m.titulo.replace('[Plano] ', ''),
+            descricao: m.objetivoMacro || ""
+        }))
+    );
+
+    // De-map Diagnóstico
+    const [blocos, setBlocos] = useState<BlocoDiagnostico[]>(
+        rawModules.filter((m: any) => m.titulo.startsWith('[Diagnóstico]')).map((m: any) => ({
+            id: m.id,
+            titulo: m.titulo.replace('[Diagnóstico] ', ''),
+            objetivo: m.objetivoMacro || "",
+            perguntas: (m.objectives || []).map((obj: any) => {
+                const parts = obj.descricao.split(' | ');
+                const texto = parts[0] || "";
+                const tipoPart = parts.find((p: string) => p.startsWith('Tipo: ')) || "";
+                const opcoesPart = parts.find((p: string) => p.startsWith('Opções: ')) || "";
+                
+                return {
+                    id: obj.id,
+                    texto,
+                    tipo: tipoPart.replace('Tipo: ', '') || "texto_curto",
+                    opcoes: opcoesPart.replace('Opções: ', '').split(',').filter(Boolean)
+                };
+            })
+        }))
+    );
+    
     const [activeTab, setActiveTab] = useState<TabId>("geral");
     const [loading, setLoading] = useState(false);
     const router = useRouter();
@@ -33,12 +68,31 @@ export default function MentorshipEditor({ initialData, builderId }: { initialDa
     const handleSave = async () => {
         setLoading(true);
         try {
+            // Re-unificar módulos
+            const allModules = [
+                ...modulos.map((m: any) => ({ ...m, tipo: 'trilha' })),
+                ...etapas.map(e => ({ 
+                    titulo: `[Plano] ${e.titulo}`, 
+                    objetivoMacro: e.descricao,
+                    objectives: [],
+                    tipo: 'plano'
+                })),
+                ...blocos.map(b => ({
+                    titulo: `[Diagnóstico] ${b.titulo}`,
+                    objetivoMacro: b.objetivo,
+                    objectives: b.perguntas.map(p => ({
+                        descricao: `${p.texto} | Tipo: ${p.tipo} | Opções: ${p.opcoes?.join(',') || ''}`
+                    })),
+                    tipo: 'diagnostico'
+                }))
+            ];
+
             const res = await updateMentorshipTemplateAction(builderId, {
                 titulo,
                 descricao,
                 preco,
                 status,
-                modules: modulos
+                modules: allModules
             });
             if (res.success) {
                 alert("Mentoria atualizada com sucesso!");
@@ -134,8 +188,8 @@ export default function MentorshipEditor({ initialData, builderId }: { initialDa
                     />
                 )}
                 {activeTab === "trilha" && <TrackBuilder modulos={modulos} setModulos={setModulos} />}
-                {activeTab === "plano" && <ActionPlanBuilder />}
-                {activeTab === "prontuario" && <DiagnosticBuilder />}
+                {activeTab === "plano" && <ActionPlanBuilder etapas={etapas} setEtapas={setEtapas} />}
+                {activeTab === "prontuario" && <DiagnosticBuilder blocos={blocos} setBlocos={setBlocos} />}
             </main>
         </div>
     );

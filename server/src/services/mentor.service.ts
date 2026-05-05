@@ -1,5 +1,5 @@
 import { db } from '../db';
-import { companies, journeys, funnelEvents, tasks, deliverables, users, roles, mentorshipTemplates, companyUsers, modules, turmas, turmaMentores, mentorshipTemplateModules, mentorshipTemplateObjectives } from '../db/schema';
+import { companies, leads, journeys, funnelEvents, tasks, deliverables, users, roles, mentorshipTemplates, companyUsers, modules, turmas, turmaMentores, mentorshipTemplateModules, mentorshipTemplateObjectives, actionPlanItems, responses, comments, scores } from '../db/schema';
 import { eq, desc, and, isNull, ne, sql, or, inArray } from 'drizzle-orm';
 import { BrevoService } from './brevo.service';
 
@@ -518,16 +518,14 @@ export class MentorService {
     }
 
     static async getAlunoDetails(mentorId: string, alunoId: string) {
-        console.log(`\n[DEBUG getAlunoDetails] mentorId=${mentorId} | alunoId=${alunoId}`);
-
         // ── Passo 1: Busca a empresa pelo ID ────────────────────────────────────
         const [company] = await db.select().from(companies).where(eq(companies.id, alunoId));
-        console.log(`[DEBUG] company found:`, company ? `id=${company.id} nome=${company.nome} mentorId=${company.mentorId}` : 'NULL');
-        if (!company) throw new Error('aluno_not_found');
+        if (!company) {
+            throw new Error('aluno_not_found');
+        }
 
         // ── Passo 2: Verificação de autorização ──────────────────────────────────
         let isAuthorized = company.mentorId === mentorId;
-        console.log(`[DEBUG] direct mentor match: ${isAuthorized}`);
 
         if (!isAuthorized) {
             const journeyList = await db.select({ turmaId: journeys.turmaId })
@@ -577,45 +575,149 @@ export class MentorService {
         }
 
         // 3. Get the journeys (matriculas)
-        const matriculasList = await db.select({
-            id: journeys.id,
-            templateId: journeys.templateId,
-            createdAt: journeys.createdAt,
-            turmaId: journeys.turmaId
-        }).from(journeys).where(eq(journeys.companyId, company.id))
-        .orderBy(desc(journeys.createdAt));
+        // ── Passo 4: Buscar matriculas sem JOIN (evitando erro de tipo text vs uuid) ─────
+        const matriculasList = await db.select()
+            .from(journeys)
+            .where(eq(journeys.companyId, company.id))
+            .orderBy(desc(journeys.createdAt));
 
-        const matriculas = matriculasList.map(m => ({
-            id: m.id,
-            turmaNome: m.turmaId ? `Envolvido em Turma` : "Diagnóstico/Avulso",
-            produtoNome: m.templateId || "Mentoria Padrão",
-            status: company.statusPrograma === 'active' ? 'Ativo' : (company.statusPrograma === 'paused' ? 'Pausado' : 'Concluído')
-        }));
+        const matriculas = [];
+        for (const m of matriculasList) {
+            let produtoNome = "Mentoria Padrão";
+            if (m.templateId) {
+                try {
+                    const [template] = await db.select({ titulo: mentorshipTemplates.titulo })
+                        .from(mentorshipTemplates)
+                        .where(eq(mentorshipTemplates.id, m.templateId as any));
+                    if (template) produtoNome = template.titulo;
+                } catch(e) {}
+            }
 
-
-        // 4. Get modules for the active/first journey (preferring the one with a turma)
-        let modulesList: any[] = [];
-        const activeJourney = matriculasList.find(m => m.turmaId) || matriculasList[0];
-        
-        if (activeJourney) {
-            modulesList = await db.select().from(modules).where(eq(modules.journeyId, activeJourney.id)).orderBy(modules.ordem);
+            matriculas.push({
+                id: m.id,
+                turmaNome: m.turmaId ? `Envolvido em Turma` : "Diagnóstico/Avulso",
+                produtoNome,
+                status: company.statusPrograma === 'active' ? 'Ativo' : (company.statusPrograma === 'paused' ? 'Pausado' : 'Concluído')
+            });
         }
 
-        const steps = modulesList.map(mod => ({
-            id: mod.id,
-            title: mod.titulo,
-            status: mod.status === 'active' ? 'current' : mod.status // maps from 'locked', 'active', 'completed' to 'locked', 'current', 'completed'
-        }));
+
+        // 4. Get modules for ALL journeys, Action Plans and Diagnostics
+        const journeysData: Record<string, any> = {};
+        for (const m of matriculasList) {
+            const journeyModules = await db.select().from(modules).where(eq(modules.journeyId, m.id)).orderBy(modules.ordem);
+            
+            const enrichedModules = [];
+            for (const mod of journeyModules) {
+                const modTasks = await db.select().from(tasks).where(eq(tasks.moduleId, mod.id));
+                
+                const tasksWithDeliverables = [];
+                for (const t of modTasks) {
+                    const taskDeliverables = await db.select().from(deliverables).where(eq(deliverables.taskId, t.id));
+                    tasksWithDeliverables.push({
+                        ...t,
+                        deliverables: taskDeliverables
+                    });
+                }
+
+                enrichedModules.push({
+                    id: mod.id,
+                    title: mod.titulo,
+                    objective: mod.objetivo,
+                    status: mod.status === 'active' ? 'current' : mod.status,
+                    tasks: tasksWithDeliverables
+                });
+            }
+
+            journeysData[m.id] = {
+                modules: enrichedModules
+            };
+        }
+
+        let templateStructure: any = null;
+        const firstJourney = matriculasList[0];
+        if (firstJourney?.turmaId) {
+            const turma = await db.query.turmas.findFirst({
+                where: eq(turmas.id, firstJourney.turmaId),
+                with: {
+                    template: {
+                        with: {
+                            modules: {
+                                with: {
+                                    objectives: true
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            if (turma?.template) {
+                templateStructure = turma.template;
+            }
+        } else {
+            // Se for avulso, podemos tentar pegar o template vinculado à jornada
+            const journey = await db.query.journeys.findFirst({
+                where: eq(journeys.companyId, company.id),
+            });
+            if (journey?.templateId) {
+                templateStructure = await db.query.mentorshipTemplates.findFirst({
+                    where: eq(mentorshipTemplates.id, journey.templateId),
+                    with: {
+                        modules: {
+                            with: {
+                                objectives: true
+                            }
+                        }
+                    }
+                });
+            }
+        }
+        
+        let actionPlan: any[] = [];
+        try {
+            actionPlan = await db.select().from(actionPlanItems).where(eq(actionPlanItems.companyId, company.id));
+        } catch(e: any) { }
+
+        let diagnostico: any[] = [];
+        let score: any = null;
+        if (company.leadId) {
+            try {
+                diagnostico = await db.select().from(responses).where(eq(responses.leadId, company.leadId));
+                const allScores = await db.select().from(scores).where(eq(scores.leadId, company.leadId));
+                score = allScores[0] || null;
+            } catch(e: any) { }
+        }
+
+        let logbook: any[] = [];
+        try {
+            logbook = await db.select({
+                id: comments.id,
+                texto: comments.texto,
+                createdAt: comments.criadoEm,
+                autorNome: users.fullName
+            }).from(comments)
+            .leftJoin(users, eq(comments.autorId, users.id))
+            .where(and(eq(comments.alvoTipo, 'company'), eq(comments.alvoId, company.id)))
+            .orderBy(desc(comments.criadoEm));
+        } catch(e: any) {}
+
+        const firstJourneyData = matriculasList.length > 0 ? journeysData[matriculasList[0].id] : { modules: [] };
 
         return {
             id: company.id,
             empresa: company.nome,
-            contato: contatoInfo.nome,
-            email: contatoInfo.email,
-            telefone: contatoInfo.telefone,
+            contato: contatoInfo?.nome || "Sem Contato",
+            email: contatoInfo?.email || "-",
+            telefone: contatoInfo?.telefone || "-",
             statusGlobal: company.statusPrograma === 'active' ? 'Ativo' : (company.statusPrograma === 'paused' ? 'Pausado' : 'Alumni'),
             matriculas,
-            steps
+            steps: firstJourneyData.modules,
+            journeysData,
+            actionPlan,
+            logbook,
+            diagnostico,
+            score,
+            templateStructure
         };
     }
 
@@ -683,7 +785,6 @@ export class MentorService {
         if (exists) return exists;
 
         // 1. Criar a nova jornada vinculada à turma
-
         const [novaJornada] = await db.insert(journeys).values({
             companyId: companyId,
             turmaId: turmaId,
@@ -715,7 +816,7 @@ export class MentorService {
                 // Criar as tarefas (objetivos) vinculadas a este módulo
                 if (tMod.objectives && tMod.objectives.length > 0) {
                     await db.insert(tasks).values(
-                        tMod.objectives.map(tObj => ({
+                        tMod.objectives.map((tObj: any) => ({
                             journeyId: novaJornada.id,
                             moduleId: newMod.id,
                             titulo: tObj.descricao,
@@ -727,5 +828,120 @@ export class MentorService {
         }
 
         return novaJornada;
+    }
+
+    static async updateModuleStatus(moduleId: string, status: string) {
+        return await db.update(modules)
+            .set({ status })
+            .where(eq(modules.id, moduleId))
+            .returning();
+    }
+
+    static async updateTaskStatus(taskId: string, status: string) {
+        return await db.update(tasks)
+            .set({ status })
+            .where(eq(tasks.id, taskId))
+            .returning();
+    }
+
+    static async updateDeliverableStatus(deliverableId: string, status: string) {
+        return await db.update(deliverables)
+            .set({ status })
+            .where(eq(deliverables.id, deliverableId))
+            .returning();
+    }
+
+    static async createTask(moduleId: string, journeyId: string, data: any) {
+        return await db.insert(tasks).values({
+            moduleId,
+            journeyId,
+            titulo: data.titulo,
+            descricao: data.descricao,
+            status: 'pending'
+        }).returning();
+    }
+
+    static async updateActionPlanStatus(itemId: string, status: string) {
+        return await db.update(actionPlanItems)
+            .set({ status })
+            .where(eq(actionPlanItems.id, itemId))
+            .returning();
+    }
+
+    static async createActionPlanItem(companyId: string, data: any) {
+        return await db.insert(actionPlanItems).values({
+            companyId,
+            janela: data.janela,
+            acao: data.acao,
+            responsavel: data.responsavel,
+            prazo: data.prazo ? new Date(data.prazo) : null,
+            status: 'pending'
+        }).returning();
+    }
+
+    static async createLogbookEntry(autorId: string, companyId: string, texto: string) {
+        return await db.insert(comments).values({
+            autorId,
+            alvoTipo: 'company',
+            alvoId: companyId,
+            texto,
+        }).returning();
+    }
+
+    static async updateCompanyNotes(companyId: string, notes: string) {
+        return await db.update(companies)
+            .set({ notes })
+            .where(eq(companies.id, companyId))
+            .returning();
+    }
+
+    static async updateDiagnosis(alunoId: string, data: any) {
+        // Primeiro, tentamos encontrar a empresa para pegar o leadId
+        const company = await db.query.companies.findFirst({
+            where: eq(companies.id, alunoId)
+        });
+
+        let targetLeadId = company?.leadId;
+
+        // Se a empresa não tem um leadId vinculado (foi criada manualmente), 
+        // precisamos criar um lead "placeholder" para poder salvar as respostas
+        if (!targetLeadId) {
+            const [newLead] = await db.insert(leads).values({
+                nome: company?.nome || 'Aluno Manual',
+                empresa: company?.nome,
+                origem: 'Migração/Manual'
+            }).returning();
+            
+            targetLeadId = newLead.id;
+
+            // Atualiza a empresa com este novo leadId para futuras referências
+            await db.update(companies)
+                .set({ leadId: targetLeadId })
+                .where(eq(companies.id, alunoId));
+        }
+
+        // Tenta atualizar o registro existente de respostas
+        // Garantir que apenas chaves válidas sejam enviadas
+        const validData: any = {};
+        for (let i = 1; i <= 10; i++) {
+            if (data[`q${i}`] !== undefined) {
+                validData[`q${i}`] = data[`q${i}`];
+            }
+        }
+
+        const updated = await db.update(responses)
+            .set(validData)
+            .where(eq(responses.leadId, targetLeadId))
+            .returning();
+
+        // Se não houver nada para atualizar (primeiro diagnóstico deste aluno), nós criamos
+        if (!updated || updated.length === 0) {
+            return await db.insert(responses).values({
+                leadId: targetLeadId,
+                ...validData
+            }).returning();
+        }
+
+        return updated;
     }
 }

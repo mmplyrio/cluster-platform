@@ -31,9 +31,11 @@ export interface StudentProfileProps {
 
 interface ComponentProps {
     student?: StudentProfileProps;
+    selectedJourneyId?: string | null;
+    onJourneyChange?: (id: string) => void;
 }
 
-export function StudentProfileHeader({ student }: ComponentProps) {
+export function StudentProfileHeader({ student, selectedJourneyId, onJourneyChange }: ComponentProps) {
     // Mock de dados caso o componente seja chamado sem props (útil para testarmos agora)
     const dadosAluno = student || {
         id: "A01",
@@ -55,6 +57,9 @@ export function StudentProfileHeader({ student }: ComponentProps) {
         .join("")
         .substring(0, 2)
         .toUpperCase();
+
+    // Use o ID selecionado ou faça o fallback para o primeiro disponível
+    const currentJourneyId = selectedJourneyId || dadosAluno.matriculas[0]?.id;
 
     return (
         <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm flex flex-col md:flex-row gap-6 justify-between items-start md:items-center">
@@ -102,12 +107,12 @@ export function StudentProfileHeader({ student }: ComponentProps) {
                     <Briefcase className="w-4 h-4" />
                     <span>Contexto da Mentoria</span>
                 </div>
-                <Select defaultValue={dadosAluno.matriculas[0]?.id}>
+                <Select value={currentJourneyId} onValueChange={onJourneyChange}>
                     <SelectTrigger className="w-full md:w-[280px] bg-white border-slate-300">
                         <SelectValue placeholder="Selecione a mentoria..." />
                     </SelectTrigger>
                     <SelectContent>
-                        {dadosAluno.matriculas.map((mat) => (
+                        {dadosAluno.matriculas.map((mat: Matricula) => (
                             <SelectItem key={mat.id} value={mat.id}>
                                 <div className="flex flex-col">
                                     <span className="font-medium text-slate-800">{mat.produtoNome}</span>
