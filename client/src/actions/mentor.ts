@@ -153,6 +153,74 @@ export async function getAlunoDetailsAction(id: string) {
     }
 }
 
+export async function updateModuleStatusAction(id: string, status: string) {
+    const API_URL = getApiUrl();
+    try {
+        const headers = await getAuthHeaders();
+        const res = await fetch(`${API_URL}/mentor/modules/${id}/status`, {
+            method: 'PATCH',
+            headers,
+            body: JSON.stringify({ status })
+        });
+        const json = await res.json();
+        return json;
+    } catch (error) {
+        console.error('Erro ao atualizar status do módulo:', error);
+        return { success: false, error: 'Erro de conexão' };
+    }
+}
+
+export async function updateTaskStatusAction(id: string, status: string) {
+    const API_URL = getApiUrl();
+    try {
+        const headers = await getAuthHeaders();
+        const res = await fetch(`${API_URL}/mentor/tasks/${id}/status`, {
+            method: 'PATCH',
+            headers,
+            body: JSON.stringify({ status })
+        });
+        const json = await res.json();
+        return json;
+    } catch (error) {
+        console.error('Erro ao atualizar status da tarefa:', error);
+        return { success: false, error: 'Erro de conexão' };
+    }
+}
+
+export async function updateDeliverableStatusAction(id: string, status: string, feedback?: string) {
+    const API_URL = getApiUrl();
+    try {
+        const headers = await getAuthHeaders();
+        const res = await fetch(`${API_URL}/mentor/deliverables/${id}/status`, {
+            method: 'PATCH',
+            headers,
+            body: JSON.stringify({ status, feedback })
+        });
+        const json = await res.json();
+        return json;
+    } catch (error) {
+        console.error('Erro ao atualizar status do entregável:', error);
+        return { success: false, error: 'Erro de conexão' };
+    }
+}
+
+export async function createTaskAction(moduleId: string, journeyId: string, titulo: string, descricao: string) {
+    const API_URL = getApiUrl();
+    try {
+        const headers = await getAuthHeaders();
+        const res = await fetch(`${API_URL}/mentor/modules/${moduleId}/tasks`, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({ journeyId, titulo, descricao })
+        });
+        const json = await res.json();
+        return json;
+    } catch (error) {
+        console.error('Erro ao criar tarefa:', error);
+        return { success: false, error: 'Erro de conexão' };
+    }
+}
+
 export async function getMentoresDisponiveisAction() {
     const API_URL = getApiUrl();
     try {
@@ -230,5 +298,90 @@ export async function getAlunosAction() {
     } catch (error) {
         console.error('Erro ao buscar alunos:', error);
         return null;
+    }
+}
+
+export async function updateActionPlanStatusAction(id: string, status: string) {
+    const API_URL = getApiUrl();
+    try {
+        const headers = await getAuthHeaders();
+        const res = await fetch(`${API_URL}/mentor/action-plan/${id}/status`, {
+            method: 'PATCH',
+            headers,
+            body: JSON.stringify({ status })
+        });
+        const json = await res.json();
+        return json;
+    } catch (error) {
+        console.error('Erro ao atualizar status do plano de ação:', error);
+        return { success: false, error: 'Erro de conexão' };
+    }
+}
+
+export async function createActionPlanItemAction(companyId: string, data: any) {
+    const API_URL = getApiUrl();
+    try {
+        const headers = await getAuthHeaders();
+        const res = await fetch(`${API_URL}/mentor/action-plan`, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({ ...data, companyId })
+        });
+        const json = await res.json();
+        return json;
+    } catch (error) {
+        console.error('Erro ao criar item do plano de ação:', error);
+        return { success: false, error: 'Erro de conexão' };
+    }
+}
+
+export async function createLogbookEntryAction(companyId: string, texto: string) {
+    const API_URL = getApiUrl();
+    try {
+        const headers = await getAuthHeaders();
+        const res = await fetch(`${API_URL}/mentor/logbook`, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({ companyId, texto })
+        });
+        const json = await res.json();
+        return json;
+    } catch (error) {
+        console.error('Erro ao criar entrada no prontuário:', error);
+        return { success: false, error: 'Erro de conexão' };
+    }
+}
+
+export async function updateCompanyNotesAction(id: string, notes: string) {
+    const API_URL = getApiUrl();
+    try {
+        const headers = await getAuthHeaders();
+        const res = await fetch(`${API_URL}/mentor/companies/${id}/notes`, {
+            method: 'PATCH',
+            headers,
+            body: JSON.stringify({ notes })
+        });
+        const json = await res.json();
+        return json;
+    } catch (error) {
+        console.error('Erro ao atualizar notas da empresa:', error);
+        return { success: false, error: 'Erro de conexão' };
+    }
+}
+
+export async function updateDiagnosisAction(alunoId: string, data: any) {
+    const API_URL = getApiUrl();
+    try {
+        const headers = await getAuthHeaders();
+        const res = await fetch(`${API_URL}/mentor/diagnosis/${alunoId}`, {
+            method: 'PATCH',
+            headers,
+            body: JSON.stringify(data)
+        });
+        const json = await res.json();
+        return json;
+    } catch (error) {
+        console.error('Erro ao atualizar diagnóstico:', error);
+        return { success: false, error: 'Erro de conexão' };
     }
 }

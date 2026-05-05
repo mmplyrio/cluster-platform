@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Calendar, User, GripVertical, CheckCircle2, Target, BarChart, FileText } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+import { updateActionPlanStatusAction, createActionPlanItemAction } from "@/actions/mentor";
 import {
     Sheet,
     SheetContent,
@@ -16,48 +18,108 @@ import {
 // Importamos o componente do formulário e a tipagem
 import { NovaAcaoSheet, TarefaAcao } from "./NovaAcaoSheet";
 
-const ETAPAS_DINAMICAS = ["0-30 Dias (Emergencial)", "31-60 Dias (Estruturação)", "61-90 Dias (Otimização)"];
+// Etapas padrão para fallback
+const DEFAULT_ETAPAS = ["0-30 Dias (Emergencial)", "31-60 Dias (Estruturação)", "61-90 Dias (Otimização)"];
 
-export function ActionPlan() {
+interface ActionPlanProps {
+    studentData?: any;
+}
 
-    // 1. Dados simulados ATUALIZADOS com os novos campos
-    const [tarefas, setTarefas] = useState<TarefaAcao[]>([
-        {
-            id: "t1", titulo: "Renegociar dívida fornecedor X", objetivo: "Reduzir passivo de curto prazo",
-            etapa: "0-30 Dias (Emergencial)", prioridade: "Alta", responsavel: "Financeiro",
-            indicador: "Novo contrato assinado com desconto", prazo: "2026-04-20", status: "Pendente"
-        },
-        {
-            id: "t2", titulo: "Aprovar novo modelo de DRE", objetivo: "Ter visibilidade real do lucro",
-            etapa: "0-30 Dias (Emergencial)", prioridade: "Média", responsavel: "Mentor",
-            indicador: "DRE validada e alimentada", prazo: "2026-04-25", status: "Concluído"
-        },
-        {
-            id: "t3", titulo: "Implantar software de gestão", objetivo: "Automatizar rotinas manuais",
-            etapa: "31-60 Dias (Estruturação)", prioridade: "Alta", responsavel: "Equipe de TI",
-            indicador: "Software rodando sem erros", prazo: "2026-05-15", status: "Pendente"
-        },
-    ]);
+export function ActionPlan({ studentData }: ActionPlanProps) {
+    const [etapasDinamicas, setEtapasDinamicas] = useState<string[]>(DEFAULT_ETAPAS);
+    const [tarefas, setTarefas] = useState<TarefaAcao[]>([]);
 
-    // 2. ESTADO DO MODAL DE DETALHES
-    const [tarefaSelecionada, setTarefaSelecionada] = useState<TarefaAcao | null>(null);
+    // 1. Mapear dados reais do backend para o formato da UI
+    const mapBackendToUI = (item: any): TarefaAcao => {
+        // Se a janela for um dos códigos antigos, mapeamos para o texto legível do fallback
+        let etapaNome = item.janela;
+        if (item.janela === '0-30') etapaNome = '0-30 Dias (Emergencial)';
+        if (item.janela === '30-60') etapaNome = '31-60 Dias (Estruturação)';
+        if (item.janela === '60-90') etapaNome = '61-90 Dias (Otimização)';
 
-    const handleAdicionarTarefa = (novaTarefa: TarefaAcao) => {
-        setTarefas([...tarefas, novaTarefa]);
+        return {
+            id: item.id,
+            titulo: item.acao,
+            objetivo: item.acao, 
+            etapa: etapaNome,
+            prioridade: "Alta", // fallback
+            responsavel: item.responsavel || "Responsável",
+            indicador: "Acompanhar",
+            prazo: item.prazo ? new Date(item.prazo).toLocaleDateString('pt-BR') : "-",
+            status: item.status === 'done' ? "Concluído" : "Pendente",
+            detalhamento: item.acao
+        };
     };
 
-    const toggleStatusTarefa = (id: string, e?: React.MouseEvent) => {
-        if (e) e.stopPropagation(); // Impede que o clique na bolinha abra o Modal
+    useEffect(() => {
+        // Atualizar etapas baseadas no template da mentoria
+        if (studentData?.templateStructure?.modules) {
+            const planModules = studentData.templateStructure.modules
+                .filter((m: any) => m.titulo.startsWith('[Plano]'))
+                .map((m: any) => m.titulo.replace('[Plano] ', ''));
+            
+            if (planModules.length > 0) {
+                setEtapasDinamicas(planModules);
+            } else {
+                setEtapasDinamicas(DEFAULT_ETAPAS);
+            }
+        }
 
-        setTarefas(tarefas.map(t =>
-            t.id === id
-                ? { ...t, status: t.status === "Pendente" ? "Concluído" : "Pendente" }
-                : t
-        ));
+        if (studentData?.actionPlan) {
+            setTarefas(studentData.actionPlan.map(mapBackendToUI));
+        }
+    }, [studentData]);
 
-        // Se o modal estiver aberto, atualiza o status dele também em tempo real
+    const [tarefaSelecionada, setTarefaSelecionada] = useState<TarefaAcao | null>(null);
+
+    const handleAdicionarTarefa = async (novaTarefa: TarefaAcao) => {
+        // Converter de volta para o formato do banco
+        // Se for uma das etapas padrão, podemos opcionalmente converter para o código '0-30'
+        // Mas o ideal é salvar o nome da etapa para ser 100% dinâmico
+        let janelaValue = novaTarefa.etapa;
+        if (janelaValue === '0-30 Dias (Emergencial)') janelaValue = '0-30';
+        if (janelaValue === '31-60 Dias (Estruturação)') janelaValue = '30-60';
+        if (janelaValue === '61-90 Dias (Otimização)') janelaValue = '60-90';
+
+        const backendData = {
+            janela: janelaValue,
+            acao: novaTarefa.titulo,
+            responsavel: novaTarefa.responsavel,
+            prazo: novaTarefa.prazo.split('/').reverse().join('-'), // simples cast de data
+        };
+
+        const res = await createActionPlanItemAction(studentData.id, backendData);
+        if (res.success) {
+            const created = res.data[0];
+            setTarefas(prev => [...prev, mapBackendToUI(created)]);
+            toast.success("Ação adicionada com sucesso!");
+        } else {
+            toast.error("Erro ao salvar ação: " + res.error);
+        }
+    };
+
+    const toggleStatusTarefa = async (id: string, e?: React.MouseEvent) => {
+        if (e) e.stopPropagation();
+
+        const tarefa = tarefas.find(t => t.id === id);
+        if (!tarefa) return;
+
+        const novoStatusLabel = tarefa.status === "Pendente" ? "Concluído" : "Pendente";
+        const backendStatus = novoStatusLabel === "Concluído" ? "done" : "pending";
+
+        // Update otimista
+        setTarefas(prev => prev.map(t => t.id === id ? { ...t, status: novoStatusLabel } : t));
         if (tarefaSelecionada?.id === id) {
-            setTarefaSelecionada({ ...tarefaSelecionada, status: tarefaSelecionada.status === "Pendente" ? "Concluído" : "Pendente" });
+            setTarefaSelecionada({ ...tarefaSelecionada, status: novoStatusLabel });
+        }
+
+        const res = await updateActionPlanStatusAction(id, backendStatus);
+        if (res.success) {
+            toast.success(`Status atualizado para ${novoStatusLabel}`);
+        } else {
+            toast.error("Erro ao atualizar status");
+            // Reverter em caso de erro
+            setTarefas(prev => prev.map(t => t.id === id ? { ...t, status: tarefa.status } : t));
         }
     };
 
@@ -68,11 +130,11 @@ export function ActionPlan() {
                     <h3 className="text-lg font-bold text-slate-800">Plano de Ação Tático</h3>
                     <p className="text-sm text-slate-500">Acompanhe a execução das metas traçadas para este ciclo.</p>
                 </div>
-                <NovaAcaoSheet etapas={ETAPAS_DINAMICAS} onSave={handleAdicionarTarefa} />
+                <NovaAcaoSheet etapas={etapasDinamicas} onSave={handleAdicionarTarefa} />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
-                {ETAPAS_DINAMICAS.map((colunaDin) => (
+                {etapasDinamicas.map((colunaDin) => (
                     <div key={colunaDin} className="bg-slate-50/80 border border-slate-200 rounded-xl p-4 min-h-[400px]">
 
                         <div className="flex items-center justify-between mb-4 pb-2 border-b border-slate-200">

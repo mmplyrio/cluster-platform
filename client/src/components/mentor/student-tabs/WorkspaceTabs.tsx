@@ -3,12 +3,16 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BookOpen, ListTodo, FileClock } from "lucide-react";
 
-// Vamos importar as abas (criaremos a primeira logo abaixo)
 import { LearningTrackManager } from "@/components/mentor/student-tabs/LearningTrackManager";
 import { ActionPlan } from "@/components/mentor/student-tabs/ActionPlan";
 import { MentorshipLogbook } from "./MentorshipLogbook";
 
-export function WorkspaceTabs() {
+interface WorkspaceTabsProps {
+    studentData?: any;
+    selectedJourneyId?: string | null;
+}
+
+export function WorkspaceTabs({ studentData, selectedJourneyId }: WorkspaceTabsProps) {
     return (
         <Tabs defaultValue="trilha" className="w-full mt-8">
             {/* MENU DE NAVEGAÇÃO DAS ABAS */}
@@ -29,17 +33,17 @@ export function WorkspaceTabs() {
 
             {/* CONTEÚDO DA ABA 1: Gestão da Trilha (Aulas e Arquivos) */}
             <TabsContent value="trilha" className="mt-6 animate-in fade-in slide-in-from-bottom-2">
-                <LearningTrackManager />
+                <LearningTrackManager studentData={studentData} selectedJourneyId={selectedJourneyId} />
             </TabsContent>
 
             {/* CONTEÚDO DA ABA 2: Tarefas Práticas */}
             <TabsContent value="plano" className="mt-6">
-                <ActionPlan />
+                <ActionPlan studentData={studentData} />
             </TabsContent>
 
             {/* CONTEÚDO DA ABA 3: Histórico de Sessões */}
             <TabsContent value="prontuario" className="mt-6">
-                <MentorshipLogbook />
+                <MentorshipLogbook studentData={studentData} />
             </TabsContent>
         </Tabs>
     );

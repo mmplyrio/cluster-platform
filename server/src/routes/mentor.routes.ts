@@ -19,4 +19,17 @@ router.post('/builder', requireRole(['MENTOR']), MentorController.createTemplate
 router.get('/builder/:id', requireRole(['MENTOR']), MentorController.getTemplate);
 router.put('/builder/:id', requireRole(['MENTOR']), MentorController.updateTemplate);
 
+// Gestão de Trilha (Mentoria em Execução)
+router.patch('/modules/:id/status', requireRole(['MENTOR']), MentorController.updateModuleStatus);
+router.patch('/tasks/:id/status', requireRole(['MENTOR']), MentorController.updateTaskStatus);
+router.patch('/deliverables/:id/status', requireRole(['MENTOR']), MentorController.updateDeliverableStatus);
+router.post('/modules/:moduleId/tasks', requireRole(['MENTOR']), MentorController.createTask);
+
+// Plano de Ação e Prontuário
+router.patch('/action-plan/:id/status', requireRole(['MENTOR']), MentorController.updateActionPlanStatus);
+router.post('/action-plan', requireRole(['MENTOR']), MentorController.createActionPlanItem);
+router.post('/logbook', requireRole(['MENTOR']), MentorController.createLogbookEntry);
+router.patch('/companies/:id/notes', requireRole(['MENTOR']), MentorController.updateCompanyNotes);
+router.patch('/diagnosis/:alunoId', requireRole(['MENTOR']), MentorController.updateDiagnosis);
+
 export default router;

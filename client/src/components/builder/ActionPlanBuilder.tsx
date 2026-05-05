@@ -12,13 +12,13 @@ export interface EtapaPlano {
     descricao: string;
 }
 
-export function ActionPlanBuilder() {
+interface ActionPlanBuilderProps {
+    etapas: EtapaPlano[];
+    setEtapas: (etapas: EtapaPlano[]) => void;
+}
+
+export function ActionPlanBuilder({ etapas, setEtapas }: ActionPlanBuilderProps) {
     // Começamos com o exemplo financeiro clássico que você citou
-    const [etapas, setEtapas] = useState<EtapaPlano[]>([
-        { id: "e1", titulo: "0-30 Dias (Emergencial)", descricao: "Ações críticas para estancar sangramentos." },
-        { id: "e2", titulo: "31-60 Dias (Estruturação)", descricao: "Implementação de novos processos." },
-        { id: "e3", titulo: "61-90 Dias (Otimização)", descricao: "Escala e ajustes de margem." }
-    ]);
 
     const adicionarEtapa = () => {
         const novaEtapa: EtapaPlano = {

@@ -142,4 +142,101 @@ export class MentorController {
             res.status(400).json({ success: false, error: error.message });
         }
     }
+
+    static async updateModuleStatus(req: AuthRequest, res: Response) {
+        try {
+            const { id } = req.params;
+            const { status } = req.body;
+            const result = await MentorService.updateModuleStatus(String(id), status);
+            res.json({ success: true, data: result });
+        } catch (error: any) {
+            res.status(400).json({ success: false, error: error.message });
+        }
+    }
+
+    static async updateTaskStatus(req: AuthRequest, res: Response) {
+        try {
+            const { id } = req.params;
+            const { status } = req.body;
+            const result = await MentorService.updateTaskStatus(String(id), status);
+            res.json({ success: true, data: result });
+        } catch (error: any) {
+            res.status(400).json({ success: false, error: error.message });
+        }
+    }
+
+    static async updateDeliverableStatus(req: AuthRequest, res: Response) {
+        try {
+            const { id } = req.params;
+            const { status, feedback } = req.body;
+            const result = await MentorService.updateDeliverableStatus(String(id), status);
+            res.json({ success: true, data: result });
+        } catch (error: any) {
+            res.status(400).json({ success: false, error: error.message });
+        }
+    }
+
+    static async createTask(req: AuthRequest, res: Response) {
+        try {
+            const { moduleId } = req.params;
+            const { journeyId, titulo, descricao } = req.body;
+            const result = await MentorService.createTask(String(moduleId), journeyId, { titulo, descricao });
+            res.json({ success: true, data: result });
+        } catch (error: any) {
+            res.status(400).json({ success: false, error: error.message });
+        }
+    }
+
+    static async updateActionPlanStatus(req: AuthRequest, res: Response) {
+        try {
+            const { id } = req.params;
+            const { status } = req.body;
+            const result = await MentorService.updateActionPlanStatus(String(id), status);
+            res.json({ success: true, data: result });
+        } catch (error: any) {
+            res.status(400).json({ success: false, error: error.message });
+        }
+    }
+
+    static async createActionPlanItem(req: AuthRequest, res: Response) {
+        try {
+            const { companyId, janela, acao, responsavel, prazo } = req.body;
+            const result = await MentorService.createActionPlanItem(companyId, { janela, acao, responsavel, prazo });
+            res.json({ success: true, data: result });
+        } catch (error: any) {
+            res.status(400).json({ success: false, error: error.message });
+        }
+    }
+
+    static async createLogbookEntry(req: AuthRequest, res: Response) {
+        try {
+            const mentorId = req.user!.userId;
+            const { companyId, texto } = req.body;
+            const result = await MentorService.createLogbookEntry(mentorId, companyId, texto);
+            res.json({ success: true, data: result });
+        } catch (error: any) {
+            res.status(400).json({ success: false, error: error.message });
+        }
+    }
+    static async updateCompanyNotes(req: AuthRequest, res: Response) {
+        try {
+            const { id } = req.params;
+            const { notes } = req.body;
+            const result = await MentorService.updateCompanyNotes(String(id), notes);
+            res.json({ success: true, data: result });
+        } catch (error: any) {
+            res.status(400).json({ success: false, error: error.message });
+        }
+    }
+
+    static async updateDiagnosis(req: AuthRequest, res: Response) {
+        try {
+            const { alunoId } = req.params;
+            const data = req.body;
+            const result = await MentorService.updateDiagnosis(String(alunoId), data);
+            res.json({ success: true, data: result });
+        } catch (error: any) {
+            res.status(400).json({ success: false, error: error.message });
+        }
+    }
 }

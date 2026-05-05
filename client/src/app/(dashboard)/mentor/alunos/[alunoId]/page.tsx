@@ -16,6 +16,7 @@ export default function RaioXAlunoPage() {
 
     const [studentData, setStudentData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
+    const [selectedJourneyId, setSelectedJourneyId] = useState<string | null>(null);
 
     const fallbackSteps: ProgressStep[] = [
         { id: "mod1", title: "Diagnosticar", status: "completed" },
@@ -31,6 +32,9 @@ export default function RaioXAlunoPage() {
         const loadData = async () => {
             const data = await getAlunoDetailsAction(alunoId);
             setStudentData(data);
+            if (data?.matriculas && data.matriculas.length > 0) {
+                setSelectedJourneyId(data.matriculas[0].id);
+            }
             setLoading(false);
         };
         loadData();
@@ -49,9 +53,16 @@ export default function RaioXAlunoPage() {
         return <div className="p-8 text-center text-red-500 flex items-center justify-center min-h-[400px]">Aluno não encontrado ou ocorreu um erro.</div>;
     }
 
-    const displaySteps = studentData.steps && studentData.steps.length > 0 
-        ? studentData.steps 
-        : fallbackSteps;
+    // Determine which steps to show based on the selected journey context
+    let activeSteps = fallbackSteps;
+    if (selectedJourneyId && studentData.journeysData && studentData.journeysData[selectedJourneyId]) {
+        activeSteps = studentData.journeysData[selectedJourneyId].modules || [];
+    } else if (studentData.steps && studentData.steps.length > 0) {
+        activeSteps = studentData.steps; // fallback to the old structure just in case
+    }
+    
+    // If there are no steps for this journey, provide an empty array to render an empty progress bar
+    if (activeSteps.length === 0) activeSteps = [];
 
     return (
         <div className="space-y-6 animate-in fade-in duration-500">
@@ -61,14 +72,21 @@ export default function RaioXAlunoPage() {
                 </Link>
             </Button>
 
-            <StudentProfileHeader student={studentData} />
+            <StudentProfileHeader 
+                student={studentData} 
+                selectedJourneyId={selectedJourneyId} 
+                onJourneyChange={setSelectedJourneyId} 
+            />
 
             <MentorshipProgress
-                steps={displaySteps}
+                steps={activeSteps}
                 onStepClick={handleStepClick}
             />
 
-            <WorkspaceTabs />
+            <WorkspaceTabs 
+                studentData={studentData}
+                selectedJourneyId={selectedJourneyId}
+            />
         </div>
     );
 }
