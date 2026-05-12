@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.turmaMentoresRelations = exports.turmasRelations = exports.mentorshipTemplatesRelations = exports.announcementsRelations = exports.messagesRelations = exports.conversationParticipantsRelations = exports.conversationsRelations = exports.actionPlanItemsRelations = exports.indicatorsRelations = exports.commentsRelations = exports.deliverablesRelations = exports.tasksRelations = exports.modulesRelations = exports.journeysRelations = exports.companyUsersRelations = exports.usersRelations = exports.rolesRelations = exports.appointmentsRelations = exports.funnelEventsRelations = exports.scoresRelations = exports.responsesRelations = exports.leadsRelations = exports.componentsRelations = exports.turmaMentores = exports.turmas = exports.mentorshipTemplates = exports.announcements = exports.messages = exports.conversationParticipants = exports.conversations = exports.actionPlanItems = exports.indicators = exports.comments = exports.deliverables = exports.tasks = exports.modules = exports.journeys = exports.companyUsers = exports.companies = exports.users = exports.roles = exports.appointments = exports.funnelEvents = exports.scores = exports.responses = exports.leads = void 0;
+exports.mentorshipTemplateObjectivesRelations = exports.mentorshipTemplateModulesRelations = exports.turmaMentoresRelations = exports.turmasRelations = exports.mentorshipTemplatesRelations = exports.announcementsRelations = exports.messagesRelations = exports.conversationParticipantsRelations = exports.conversationsRelations = exports.actionPlanItemsRelations = exports.indicatorsRelations = exports.commentsRelations = exports.deliverablesRelations = exports.tasksRelations = exports.modulesRelations = exports.journeysRelations = exports.companyUsersRelations = exports.usersRelations = exports.rolesRelations = exports.appointmentsRelations = exports.funnelEventsRelations = exports.scoresRelations = exports.responsesRelations = exports.leadsRelations = exports.componentsRelations = exports.turmaMentores = exports.mentorshipTemplateObjectives = exports.mentorshipTemplateModules = exports.turmas = exports.mentorshipTemplates = exports.announcements = exports.messages = exports.conversationParticipants = exports.conversations = exports.actionPlanItems = exports.indicators = exports.comments = exports.deliverables = exports.tasks = exports.modules = exports.journeys = exports.companyUsers = exports.companies = exports.users = exports.roles = exports.appointments = exports.funnelEvents = exports.scores = exports.responses = exports.leads = void 0;
 const pg_core_1 = require("drizzle-orm/pg-core");
 const drizzle_orm_1 = require("drizzle-orm");
 // 1. Leads
@@ -93,23 +93,24 @@ exports.companies = (0, pg_core_1.pgTable)('companies', {
     notes: (0, pg_core_1.text)('notes'),
     createdAt: (0, pg_core_1.timestamp)('created_at').defaultNow().notNull(),
 });
-// 9. Company Users (Many-to-Many relationship between Users and Companies)
+// 9. Company Users
 exports.companyUsers = (0, pg_core_1.pgTable)('company_users', {
     id: (0, pg_core_1.uuid)('id').primaryKey().defaultRandom(),
     companyId: (0, pg_core_1.uuid)('company_id').references(() => exports.companies.id, { onDelete: 'cascade' }).notNull(),
     userId: (0, pg_core_1.uuid)('user_id').references(() => exports.users.id, { onDelete: 'cascade' }).notNull(),
     papelNoCaso: (0, pg_core_1.text)('papel_no_caso'), // socio, gestor, financeiro
 });
-// 10. Journeys (Mentorship track instances per company)
+// 10. Journeys
 exports.journeys = (0, pg_core_1.pgTable)('journeys', {
     id: (0, pg_core_1.uuid)('id').primaryKey().defaultRandom(),
     companyId: (0, pg_core_1.uuid)('company_id').references(() => exports.companies.id, { onDelete: 'cascade' }).notNull(),
+    turmaId: (0, pg_core_1.uuid)('turma_id').references(() => exports.turmas.id, { onDelete: 'set null' }),
     templateId: (0, pg_core_1.text)('template_id'),
     etapaAtual: (0, pg_core_1.text)('etapa_atual'),
     progresso: (0, pg_core_1.integer)('progresso').default(0), // 0 to 100
     createdAt: (0, pg_core_1.timestamp)('created_at').defaultNow().notNull(),
 });
-// 11. Modules (Steps of the journey)
+// 11. Modules
 exports.modules = (0, pg_core_1.pgTable)('modules', {
     id: (0, pg_core_1.uuid)('id').primaryKey().defaultRandom(),
     journeyId: (0, pg_core_1.uuid)('journey_id').references(() => exports.journeys.id, { onDelete: 'cascade' }).notNull(),
@@ -230,6 +231,21 @@ exports.turmas = (0, pg_core_1.pgTable)('turmas', {
     createdAt: (0, pg_core_1.timestamp)('created_at').defaultNow().notNull(),
 });
 // 23. Turma Mentores (N:N)
+// 24. Mentorship Template Modules (Blueprints)
+exports.mentorshipTemplateModules = (0, pg_core_1.pgTable)('mentorship_template_modules', {
+    id: (0, pg_core_1.uuid)('id').primaryKey().defaultRandom(),
+    templateId: (0, pg_core_1.uuid)('template_id').references(() => exports.mentorshipTemplates.id, { onDelete: 'cascade' }).notNull(),
+    ordem: (0, pg_core_1.integer)('ordem').notNull(),
+    titulo: (0, pg_core_1.text)('titulo').notNull(),
+    objetivoMacro: (0, pg_core_1.text)('objetivo_macro'),
+});
+// 25. Mentorship Template Objectives (Blueprints)
+exports.mentorshipTemplateObjectives = (0, pg_core_1.pgTable)('mentorship_template_objectives', {
+    id: (0, pg_core_1.uuid)('id').primaryKey().defaultRandom(),
+    moduleId: (0, pg_core_1.uuid)('module_id').references(() => exports.mentorshipTemplateModules.id, { onDelete: 'cascade' }).notNull(),
+    descricao: (0, pg_core_1.text)('descricao').notNull(),
+    ordem: (0, pg_core_1.integer)('ordem').notNull(),
+});
 exports.turmaMentores = (0, pg_core_1.pgTable)('turma_mentores', {
     id: (0, pg_core_1.uuid)('id').primaryKey().defaultRandom(),
     turmaId: (0, pg_core_1.uuid)('turma_id').references(() => exports.turmas.id, { onDelete: 'cascade' }).notNull(),
@@ -318,8 +334,9 @@ exports.messagesRelations = (0, drizzle_orm_1.relations)(exports.messages, ({ on
 exports.announcementsRelations = (0, drizzle_orm_1.relations)(exports.announcements, ({ one }) => ({
     author: one(exports.users, { fields: [exports.announcements.authorId], references: [exports.users.id] }),
 }));
-exports.mentorshipTemplatesRelations = (0, drizzle_orm_1.relations)(exports.mentorshipTemplates, ({ one }) => ({
+exports.mentorshipTemplatesRelations = (0, drizzle_orm_1.relations)(exports.mentorshipTemplates, ({ one, many }) => ({
     mentor: one(exports.users, { fields: [exports.mentorshipTemplates.mentorId], references: [exports.users.id] }),
+    modules: many(exports.mentorshipTemplateModules),
 }));
 exports.turmasRelations = (0, drizzle_orm_1.relations)(exports.turmas, ({ one, many }) => ({
     template: one(exports.mentorshipTemplates, { fields: [exports.turmas.templateId], references: [exports.mentorshipTemplates.id] }),
@@ -329,4 +346,11 @@ exports.turmasRelations = (0, drizzle_orm_1.relations)(exports.turmas, ({ one, m
 exports.turmaMentoresRelations = (0, drizzle_orm_1.relations)(exports.turmaMentores, ({ one }) => ({
     turma: one(exports.turmas, { fields: [exports.turmaMentores.turmaId], references: [exports.turmas.id] }),
     mentor: one(exports.users, { fields: [exports.turmaMentores.mentorId], references: [exports.users.id] }),
+}));
+exports.mentorshipTemplateModulesRelations = (0, drizzle_orm_1.relations)(exports.mentorshipTemplateModules, ({ many, one }) => ({
+    template: one(exports.mentorshipTemplates, { fields: [exports.mentorshipTemplateModules.templateId], references: [exports.mentorshipTemplates.id] }),
+    objectives: many(exports.mentorshipTemplateObjectives),
+}));
+exports.mentorshipTemplateObjectivesRelations = (0, drizzle_orm_1.relations)(exports.mentorshipTemplateObjectives, ({ one }) => ({
+    module: one(exports.mentorshipTemplateModules, { fields: [exports.mentorshipTemplateObjectives.moduleId], references: [exports.mentorshipTemplateModules.id] }),
 }));

@@ -12,8 +12,21 @@ router.post('/alunos', (0, auth_middleware_1.requireRole)(['MENTOR']), mentor_co
 router.get('/turmas', (0, auth_middleware_1.requireRole)(['MENTOR']), mentor_controller_1.MentorController.getTurmas);
 router.post('/turmas', (0, auth_middleware_1.requireRole)(['MENTOR']), mentor_controller_1.MentorController.createTurma);
 router.get('/turmas/:id', (0, auth_middleware_1.requireRole)(['MENTOR']), mentor_controller_1.MentorController.getTurmaDetails);
+router.post('/turmas/:id/alunos', (0, auth_middleware_1.requireRole)(['MENTOR']), mentor_controller_1.MentorController.addAlunoToTurma);
 router.get('/mentores', (0, auth_middleware_1.requireRole)(['MENTOR']), mentor_controller_1.MentorController.getMentoresDisponiveis);
 router.get('/builder', (0, auth_middleware_1.requireRole)(['MENTOR']), mentor_controller_1.MentorController.getBuilder);
+router.post('/builder', (0, auth_middleware_1.requireRole)(['MENTOR']), mentor_controller_1.MentorController.createTemplate);
 router.get('/builder/:id', (0, auth_middleware_1.requireRole)(['MENTOR']), mentor_controller_1.MentorController.getTemplate);
 router.put('/builder/:id', (0, auth_middleware_1.requireRole)(['MENTOR']), mentor_controller_1.MentorController.updateTemplate);
+// Gestão de Trilha (Mentoria em Execução)
+router.patch('/modules/:id/status', (0, auth_middleware_1.requireRole)(['MENTOR']), mentor_controller_1.MentorController.updateModuleStatus);
+router.patch('/tasks/:id/status', (0, auth_middleware_1.requireRole)(['MENTOR']), mentor_controller_1.MentorController.updateTaskStatus);
+router.patch('/deliverables/:id/status', (0, auth_middleware_1.requireRole)(['MENTOR']), mentor_controller_1.MentorController.updateDeliverableStatus);
+router.post('/modules/:moduleId/tasks', (0, auth_middleware_1.requireRole)(['MENTOR']), mentor_controller_1.MentorController.createTask);
+// Plano de Ação e Prontuário
+router.patch('/action-plan/:id/status', (0, auth_middleware_1.requireRole)(['MENTOR']), mentor_controller_1.MentorController.updateActionPlanStatus);
+router.post('/action-plan', (0, auth_middleware_1.requireRole)(['MENTOR']), mentor_controller_1.MentorController.createActionPlanItem);
+router.post('/logbook', (0, auth_middleware_1.requireRole)(['MENTOR']), mentor_controller_1.MentorController.createLogbookEntry);
+router.patch('/companies/:id/notes', (0, auth_middleware_1.requireRole)(['MENTOR']), mentor_controller_1.MentorController.updateCompanyNotes);
+router.patch('/diagnosis/:alunoId', (0, auth_middleware_1.requireRole)(['MENTOR']), mentor_controller_1.MentorController.updateDiagnosis);
 exports.default = router;

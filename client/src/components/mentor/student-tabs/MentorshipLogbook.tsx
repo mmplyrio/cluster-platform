@@ -51,20 +51,27 @@ const FORMULARIO_PADRAO = [
 
 interface MentorshipLogbookProps {
     studentData?: any;
+    selectedJourneyId?: string | null;
 }
 
-export function MentorshipLogbook({ studentData }: MentorshipLogbookProps) {
+export function MentorshipLogbook({ studentData, selectedJourneyId }: MentorshipLogbookProps) {
     const [isEditing, setIsEditing] = useState(false);
     const [novaNota, setNovaNota] = useState("");
     const [isAddingNota, setIsAddingNota] = useState(false);
+    const [isSavingNota, setIsSavingNota] = useState(false);
+    const [historicoSessoes, setHistoricoSessoes] = useState<any[]>([]);
 
     // 2. Construir Formulário Dinâmico a partir do Template (se houver)
     const [formularioDinamico, setFormularioDinamico] = useState<any[]>(FORMULARIO_PADRAO);
 
     useEffect(() => {
-        if (studentData?.templateStructure?.modules) {
+        const currentTemplate = selectedJourneyId && studentData?.journeysData?.[selectedJourneyId]?.templateStructure 
+            ? studentData.journeysData[selectedJourneyId].templateStructure 
+            : studentData?.templateStructure;
+
+        if (currentTemplate?.modules) {
             // Se houver módulos, verificamos se algum é de "Diagnóstico"
-            const diagModules = studentData.templateStructure.modules.filter((m: any) => 
+            const diagModules = currentTemplate.modules.filter((m: any) => 
                 m.titulo.toLowerCase().includes('diagnóstico') || m.titulo.toLowerCase().includes('prontuário')
             );
 
@@ -95,9 +102,13 @@ export function MentorshipLogbook({ studentData }: MentorshipLogbookProps) {
                     })
                 }));
                 setFormularioDinamico(dynamic);
+            } else {
+                setFormularioDinamico(FORMULARIO_PADRAO);
             }
+        } else {
+            setFormularioDinamico(FORMULARIO_PADRAO);
         }
-    }, [studentData]);
+    }, [studentData, selectedJourneyId]);
 
     // 1. Mapear as respostas reais do banco de dados (se houverem)
     const dbResponse = studentData?.diagnostico?.[0] || {};
@@ -110,7 +121,6 @@ export function MentorshipLogbook({ studentData }: MentorshipLogbookProps) {
     }
 
     const [respostas, setRespostas] = useState<Record<string, string>>(initialRespostas);
-    const [historicoSessoes, setHistoricoSessoes] = useState<any[]>([]);
     const [notasAnalista, setNotasAnalista] = useState({
         bloco1: studentData?.empresa?.notes || "Sem observações registradas.",
         gargaloPrincipal: studentData?.score?.gargaloPrincipal || "Analise o diagnóstico para identificar o gargalo.",
@@ -118,36 +128,55 @@ export function MentorshipLogbook({ studentData }: MentorshipLogbookProps) {
     });
 
     useEffect(() => {
-        if (studentData?.logbook) {
-            setHistoricoSessoes(studentData.logbook.map((item: any) => ({
-                id: item.id,
-                data: new Date(item.createdAt).toLocaleDateString('pt-BR'),
-                tipo: "Acompanhamento",
-                resumo: item.texto,
-                autor: item.autorNome
-            })));
-        }
-    }, [studentData]);
+        const currentLogbook = selectedJourneyId && studentData?.journeysData?.[selectedJourneyId]?.logbook 
+            ? studentData.journeysData[selectedJourneyId].logbook 
+            : [];
+
+        setHistoricoSessoes(currentLogbook.map((item: any) => ({
+            id: item.id,
+            data: new Date(item.createdAt).toLocaleDateString('pt-BR'),
+            tipo: "Acompanhamento",
+            resumo: item.texto,
+            autor: item.autorNome
+        })));
+    }, [studentData, selectedJourneyId]);
 
     const handleAddNota = async () => {
-        if (!novaNota.trim()) return;
+        if (!novaNota.trim() || isSavingNota) return;
+        setIsSavingNota(true);
 
-        const res = await createLogbookEntryAction(studentData.id, novaNota);
+        const res = await createLogbookEntryAction(studentData.id, novaNota, selectedJourneyId);
         if (res.success) {
             const created = res.data[0];
-            setHistoricoSessoes(prev => [{
+            const newSessao = {
                 id: created.id,
                 data: new Date(created.criadoEm).toLocaleDateString('pt-BR'),
                 tipo: "Acompanhamento",
                 resumo: created.texto,
                 autor: "Você" // Simplificação
-            }, ...prev]);
+            };
+            setHistoricoSessoes(prev => [newSessao, ...prev]);
+
+            // Muta o studentData local para persistir estado entre as abas
+            if (selectedJourneyId && studentData?.journeysData?.[selectedJourneyId]) {
+                if (!studentData.journeysData[selectedJourneyId].logbook) {
+                    studentData.journeysData[selectedJourneyId].logbook = [];
+                }
+                studentData.journeysData[selectedJourneyId].logbook.unshift({
+                    id: created.id,
+                    texto: created.texto,
+                    createdAt: created.criadoEm,
+                    autorNome: "Você" 
+                });
+            }
+
             setNovaNota("");
             setIsAddingNota(false);
             toast.success("Nota adicionada ao prontuário!");
         } else {
             toast.error("Erro ao salvar nota");
         }
+        setIsSavingNota(false);
     };
 
     const handleToggleEdit = async () => {
@@ -384,8 +413,8 @@ export function MentorshipLogbook({ studentData }: MentorshipLogbookProps) {
                                             className="bg-white border-blue-200 min-h-[100px] mb-3"
                                         />
                                         <div className="flex justify-end">
-                                            <Button size="sm" onClick={handleAddNota} className="bg-blue-600 hover:bg-blue-700 text-white">
-                                                Salvar Nota
+                                            <Button size="sm" onClick={handleAddNota} disabled={isSavingNota} className="bg-blue-600 hover:bg-blue-700 text-white">
+                                                {isSavingNota ? "Salvando..." : "Salvar Nota"}
                                             </Button>
                                         </div>
                                     </div>

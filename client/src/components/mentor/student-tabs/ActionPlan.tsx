@@ -23,9 +23,10 @@ const DEFAULT_ETAPAS = ["0-30 Dias (Emergencial)", "31-60 Dias (Estruturação)"
 
 interface ActionPlanProps {
     studentData?: any;
+    selectedJourneyId?: string | null;
 }
 
-export function ActionPlan({ studentData }: ActionPlanProps) {
+export function ActionPlan({ studentData, selectedJourneyId }: ActionPlanProps) {
     const [etapasDinamicas, setEtapasDinamicas] = useState<string[]>(DEFAULT_ETAPAS);
     const [tarefas, setTarefas] = useState<TarefaAcao[]>([]);
 
@@ -53,8 +54,12 @@ export function ActionPlan({ studentData }: ActionPlanProps) {
 
     useEffect(() => {
         // Atualizar etapas baseadas no template da mentoria
-        if (studentData?.templateStructure?.modules) {
-            const planModules = studentData.templateStructure.modules
+        const currentTemplate = selectedJourneyId && studentData?.journeysData?.[selectedJourneyId]?.templateStructure 
+            ? studentData.journeysData[selectedJourneyId].templateStructure 
+            : studentData?.templateStructure;
+
+        if (currentTemplate?.modules) {
+            const planModules = currentTemplate.modules
                 .filter((m: any) => m.titulo.startsWith('[Plano]'))
                 .map((m: any) => m.titulo.replace('[Plano] ', ''));
             
@@ -63,12 +68,20 @@ export function ActionPlan({ studentData }: ActionPlanProps) {
             } else {
                 setEtapasDinamicas(DEFAULT_ETAPAS);
             }
+        } else {
+            setEtapasDinamicas(DEFAULT_ETAPAS);
         }
 
-        if (studentData?.actionPlan) {
-            setTarefas(studentData.actionPlan.map(mapBackendToUI));
+        const currentActionPlan = selectedJourneyId && studentData?.journeysData?.[selectedJourneyId]?.actionPlan 
+            ? studentData.journeysData[selectedJourneyId].actionPlan 
+            : [];
+
+        if (currentActionPlan.length > 0) {
+            setTarefas(currentActionPlan.map(mapBackendToUI));
+        } else {
+            setTarefas([]);
         }
-    }, [studentData]);
+    }, [studentData, selectedJourneyId]);
 
     const [tarefaSelecionada, setTarefaSelecionada] = useState<TarefaAcao | null>(null);
 
@@ -86,12 +99,22 @@ export function ActionPlan({ studentData }: ActionPlanProps) {
             acao: novaTarefa.titulo,
             responsavel: novaTarefa.responsavel,
             prazo: novaTarefa.prazo.split('/').reverse().join('-'), // simples cast de data
+            journeyId: selectedJourneyId
         };
 
         const res = await createActionPlanItemAction(studentData.id, backendData);
         if (res.success) {
             const created = res.data[0];
             setTarefas(prev => [...prev, mapBackendToUI(created)]);
+
+            // Manter sincronia com o prop (para não perder ao trocar de aba)
+            if (selectedJourneyId && studentData?.journeysData?.[selectedJourneyId]) {
+                if (!studentData.journeysData[selectedJourneyId].actionPlan) {
+                    studentData.journeysData[selectedJourneyId].actionPlan = [];
+                }
+                studentData.journeysData[selectedJourneyId].actionPlan.push(created);
+            }
+
             toast.success("Ação adicionada com sucesso!");
         } else {
             toast.error("Erro ao salvar ação: " + res.error);
@@ -113,6 +136,14 @@ export function ActionPlan({ studentData }: ActionPlanProps) {
             setTarefaSelecionada({ ...tarefaSelecionada, status: novoStatusLabel });
         }
 
+        // Muta o objeto raiz para manter o estado persistente entre trocas de aba
+        if (selectedJourneyId && studentData?.journeysData?.[selectedJourneyId]?.actionPlan) {
+            const itemInDb = studentData.journeysData[selectedJourneyId].actionPlan.find((i: any) => i.id === id);
+            if (itemInDb) {
+                itemInDb.status = backendStatus;
+            }
+        }
+
         const res = await updateActionPlanStatusAction(id, backendStatus);
         if (res.success) {
             toast.success(`Status atualizado para ${novoStatusLabel}`);
@@ -120,6 +151,13 @@ export function ActionPlan({ studentData }: ActionPlanProps) {
             toast.error("Erro ao atualizar status");
             // Reverter em caso de erro
             setTarefas(prev => prev.map(t => t.id === id ? { ...t, status: tarefa.status } : t));
+            
+            if (selectedJourneyId && studentData?.journeysData?.[selectedJourneyId]?.actionPlan) {
+                const itemInDb = studentData.journeysData[selectedJourneyId].actionPlan.find((i: any) => i.id === id);
+                if (itemInDb) {
+                    itemInDb.status = tarefa.status === "Concluído" ? "done" : "pending";
+                }
+            }
         }
     };
 
