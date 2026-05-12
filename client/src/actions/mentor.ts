@@ -335,14 +335,14 @@ export async function createActionPlanItemAction(companyId: string, data: any) {
     }
 }
 
-export async function createLogbookEntryAction(companyId: string, texto: string) {
+export async function createLogbookEntryAction(companyId: string, texto: string, journeyId?: string | null) {
     const API_URL = getApiUrl();
     try {
         const headers = await getAuthHeaders();
         const res = await fetch(`${API_URL}/mentor/logbook`, {
             method: 'POST',
             headers,
-            body: JSON.stringify({ companyId, texto })
+            body: JSON.stringify({ companyId, texto, journeyId })
         });
         const json = await res.json();
         return json;

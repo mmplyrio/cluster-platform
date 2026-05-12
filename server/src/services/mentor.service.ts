@@ -602,6 +602,32 @@ export class MentorService {
         }
 
 
+        let actionPlan: any[] = [];
+        try {
+            actionPlan = await db.select().from(actionPlanItems).where(eq(actionPlanItems.companyId, company.id));
+        } catch(e: any) { }
+
+        let allLogbooks: any[] = [];
+        try {
+            const journeyIds = matriculasList.map(m => m.id);
+            allLogbooks = await db.select({
+                id: comments.id,
+                texto: comments.texto,
+                createdAt: comments.criadoEm,
+                autorNome: users.fullName,
+                alvoTipo: comments.alvoTipo,
+                alvoId: comments.alvoId
+            }).from(comments)
+            .leftJoin(users, eq(comments.autorId, users.id))
+            .where(
+                or(
+                    and(eq(comments.alvoTipo, 'company'), eq(comments.alvoId, company.id)),
+                    journeyIds.length > 0 ? and(eq(comments.alvoTipo, 'journey'), inArray(comments.alvoId, journeyIds)) : sql`false`
+                )
+            )
+            .orderBy(desc(comments.criadoEm));
+        } catch(e: any) {}
+
         // 4. Get modules for ALL journeys, Action Plans and Diagnostics
         const journeysData: Record<string, any> = {};
         for (const m of matriculasList) {
@@ -629,39 +655,28 @@ export class MentorService {
                 });
             }
 
-            journeysData[m.id] = {
-                modules: enrichedModules
-            };
-        }
-
-        let templateStructure: any = null;
-        const firstJourney = matriculasList[0];
-        if (firstJourney?.turmaId) {
-            const turma = await db.query.turmas.findFirst({
-                where: eq(turmas.id, firstJourney.turmaId),
-                with: {
-                    template: {
-                        with: {
-                            modules: {
-                                with: {
-                                    objectives: true
+            let templateStructure: any = null;
+            if (m.turmaId) {
+                const turma = await db.query.turmas.findFirst({
+                    where: eq(turmas.id, m.turmaId),
+                    with: {
+                        template: {
+                            with: {
+                                modules: {
+                                    with: {
+                                        objectives: true
+                                    }
                                 }
                             }
                         }
                     }
+                });
+                if (turma?.template) {
+                    templateStructure = turma.template;
                 }
-            });
-            if (turma?.template) {
-                templateStructure = turma.template;
-            }
-        } else {
-            // Se for avulso, podemos tentar pegar o template vinculado à jornada
-            const journey = await db.query.journeys.findFirst({
-                where: eq(journeys.companyId, company.id),
-            });
-            if (journey?.templateId) {
+            } else if (m.templateId) {
                 templateStructure = await db.query.mentorshipTemplates.findFirst({
-                    where: eq(mentorshipTemplates.id, journey.templateId),
+                    where: eq(mentorshipTemplates.id, m.templateId),
                     with: {
                         modules: {
                             with: {
@@ -671,12 +686,19 @@ export class MentorService {
                     }
                 });
             }
+
+            journeysData[m.id] = {
+                modules: enrichedModules,
+                templateStructure,
+                actionPlan: actionPlan.filter(a => a.journeyId === m.id),
+                logbook: allLogbooks.filter(l => l.alvoTipo === 'journey' ? l.alvoId === m.id : m.id === matriculasList[0]?.id) // Company notes fall back to first journey
+            };
         }
-        
-        let actionPlan: any[] = [];
-        try {
-            actionPlan = await db.select().from(actionPlanItems).where(eq(actionPlanItems.companyId, company.id));
-        } catch(e: any) { }
+
+        let templateStructure: any = null;
+        if (matriculasList.length > 0 && journeysData[matriculasList[0].id]?.templateStructure) {
+            templateStructure = journeysData[matriculasList[0].id].templateStructure;
+        }
 
         let diagnostico: any[] = [];
         let score: any = null;
@@ -689,17 +711,10 @@ export class MentorService {
         }
 
         let logbook: any[] = [];
-        try {
-            logbook = await db.select({
-                id: comments.id,
-                texto: comments.texto,
-                createdAt: comments.criadoEm,
-                autorNome: users.fullName
-            }).from(comments)
-            .leftJoin(users, eq(comments.autorId, users.id))
-            .where(and(eq(comments.alvoTipo, 'company'), eq(comments.alvoId, company.id)))
-            .orderBy(desc(comments.criadoEm));
-        } catch(e: any) {}
+        // O logbook legado global foi movido para o journeysData acima. Para não quebrar quem usa o root, exportamos os da primeira jornada.
+        if (matriculasList.length > 0) {
+            logbook = journeysData[matriculasList[0].id].logbook;
+        }
 
         const firstJourneyData = matriculasList.length > 0 ? journeysData[matriculasList[0].id] : { modules: [] };
 
@@ -871,6 +886,7 @@ export class MentorService {
     static async createActionPlanItem(companyId: string, data: any) {
         return await db.insert(actionPlanItems).values({
             companyId,
+            journeyId: data.journeyId,
             janela: data.janela,
             acao: data.acao,
             responsavel: data.responsavel,
@@ -879,11 +895,11 @@ export class MentorService {
         }).returning();
     }
 
-    static async createLogbookEntry(autorId: string, companyId: string, texto: string) {
+    static async createLogbookEntry(autorId: string, companyId: string, texto: string, journeyId?: string) {
         return await db.insert(comments).values({
             autorId,
-            alvoTipo: 'company',
-            alvoId: companyId,
+            alvoTipo: journeyId ? 'journey' : 'company',
+            alvoId: journeyId || companyId,
             texto,
         }).returning();
     }

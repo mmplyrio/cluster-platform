@@ -200,8 +200,8 @@ export class MentorController {
 
     static async createActionPlanItem(req: AuthRequest, res: Response) {
         try {
-            const { companyId, janela, acao, responsavel, prazo } = req.body;
-            const result = await MentorService.createActionPlanItem(companyId, { janela, acao, responsavel, prazo });
+            const { companyId, janela, acao, responsavel, prazo, journeyId } = req.body;
+            const result = await MentorService.createActionPlanItem(companyId, { janela, acao, responsavel, prazo, journeyId });
             res.json({ success: true, data: result });
         } catch (error: any) {
             res.status(400).json({ success: false, error: error.message });
@@ -211,8 +211,8 @@ export class MentorController {
     static async createLogbookEntry(req: AuthRequest, res: Response) {
         try {
             const mentorId = req.user!.userId;
-            const { companyId, texto } = req.body;
-            const result = await MentorService.createLogbookEntry(mentorId, companyId, texto);
+            const { companyId, texto, journeyId } = req.body;
+            const result = await MentorService.createLogbookEntry(mentorId, companyId, texto, journeyId);
             res.json({ success: true, data: result });
         } catch (error: any) {
             res.status(400).json({ success: false, error: error.message });

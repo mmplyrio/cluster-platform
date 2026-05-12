@@ -20,6 +20,7 @@ export const leads = pgTable('leads', {
 export const responses = pgTable('responses', {
     id: uuid('id').primaryKey().defaultRandom(),
     leadId: uuid('lead_id').references(() => leads.id, { onDelete: 'cascade' }),
+    journeyId: uuid('journey_id').references(() => journeys.id, { onDelete: 'cascade' }),
     q1: text('q1'),
     q2: text('q2'),
     q3: text('q3'),
@@ -181,6 +182,7 @@ export const indicators = pgTable('indicators', {
 export const actionPlanItems = pgTable('action_plan_items', {
     id: uuid('id').primaryKey().defaultRandom(),
     companyId: uuid('company_id').references(() => companies.id, { onDelete: 'cascade' }).notNull(),
+    journeyId: uuid('journey_id').references(() => journeys.id, { onDelete: 'cascade' }),
     janela: text('janela'), // '0-30', '30-60', '60-90'
     acao: text('acao').notNull(),
     responsavel: text('responsavel'),

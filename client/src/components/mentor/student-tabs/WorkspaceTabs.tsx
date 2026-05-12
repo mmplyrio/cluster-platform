@@ -38,12 +38,12 @@ export function WorkspaceTabs({ studentData, selectedJourneyId }: WorkspaceTabsP
 
             {/* CONTEÚDO DA ABA 2: Tarefas Práticas */}
             <TabsContent value="plano" className="mt-6">
-                <ActionPlan studentData={studentData} />
+                <ActionPlan studentData={studentData} selectedJourneyId={selectedJourneyId} />
             </TabsContent>
 
             {/* CONTEÚDO DA ABA 3: Histórico de Sessões */}
             <TabsContent value="prontuario" className="mt-6">
-                <MentorshipLogbook studentData={studentData} />
+                <MentorshipLogbook studentData={studentData} selectedJourneyId={selectedJourneyId} />
             </TabsContent>
         </Tabs>
     );
